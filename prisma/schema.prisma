@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  name        String
+  tier        String   // basic | pro | premium
+  price       Int
+  monthlyFee  Int      @default(0)
+  description String
+  features    String   // JSON array string
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+}
+
+model Order {
+  id                 String    @id @default(uuid())
+  orderNumber        String    @unique
+  clientName         String
+  brandName          String
+  email              String
+  phone              String
+  address            String    @default("")
+  domainRequested    String    @default("")
+  subdomainRequested String    @default("")
+  packageId          String
+  package            Package   @relation(fields: [packageId], references: [id])
+  status             String    @default("pending") // pending | processing | ready | active | inactive
+  paymentType        String    @default("full")    // full | dp
+  notes              String    @default("")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  payments           Payment[]
+  tenant             Tenant?
+}
+
+model Payment {
+  id          String    @id @default(uuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  amount      Int
+  method      String    @default("")   // va | ewallet | bank_transfer | qris
+  status      String    @default("pending") // pending | paid | failed | expired
+  gatewayRef  String    @default("")
+  gatewayName String    @default("")   // midtrans | xendit | sandbox
+  paymentUrl  String    @default("")
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  orderId     String       @unique
+  order       Order        @relation(fields: [orderId], references: [id])
+  subdomain   String       @unique
+  domain      String       @default("")
+  brandName   String
+  ownerName   String
+  contactInfo String       @default("") // JSON
+  logoUrl     String       @default("")
+  config      String       @default("{}") // JSON config
+  isActive    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  trafficLogs TrafficLog[]
+}
+
+model TrafficLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  pageViews Int      @default(0)
+  visitors  Int      @default(0)
+  date      DateTime
+  createdAt DateTime @default(now())
+}
+
+model PaymentGatewayConfig {
+  id        String   @id @default(uuid())
+  gateway   String   @unique // midtrans | xendit
+  config    String   @default("{}") // JSON: API keys, settings
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
