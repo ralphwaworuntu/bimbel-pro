@@ -240,8 +240,8 @@ export default function AdminDashboard() {
                                         <td>{order.package?.name}</td>
                                         <td>
                                             <span className={`badge ${order.status === 'active' ? 'badge-success' :
-                                                    order.status === 'processing' ? 'badge-info' :
-                                                        order.status === 'pending' ? 'badge-warning' : 'badge-danger'
+                                                order.status === 'processing' ? 'badge-info' :
+                                                    order.status === 'pending' ? 'badge-warning' : 'badge-danger'
                                                 }`}>
                                                 {order.status}
                                             </span>
@@ -326,7 +326,7 @@ export default function AdminDashboard() {
                 }
                 .action-btn:hover {
                     border-color: var(--accent);
-                    transform: translateY(-2px);
+                    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
                 }
 
                 .stats-grid {
