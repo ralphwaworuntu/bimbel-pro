@@ -103,3 +103,17 @@ model PaymentGatewayConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model DomainPrice {
+  id          String   @id @default(uuid())
+  extension   String   @unique  // .com, .id, .co.id, etc.
+  label       String             // "Domain .com"
+  description String   @default("")
+  price       Int                // Original price per year (Rupiah)
+  promoPrice  Int?               // Promo price (null = no promo)
+  promoActive Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

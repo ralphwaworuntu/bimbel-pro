@@ -20,6 +20,16 @@ interface Package {
     features: string[];
 }
 
+interface DomainPriceItem {
+    id: string;
+    extension: string;
+    label: string;
+    description: string;
+    price: number;
+    promoPrice: number | null;
+    promoActive: boolean;
+}
+
 function formatRp(n: number) {
     return new Intl.NumberFormat('id-ID').format(n);
 }
@@ -47,43 +57,23 @@ interface OrderFormState {
 function OrderWizardContent() {
     const searchParams = useSearchParams();
     const preselected = searchParams.get('package');
-    const { showToast } = useToast();
-
-    // Load initial state from localStorage if available, or default
-    const getInitialStep = () => {
-        if (typeof window !== 'undefined') {
-            const savedStep = localStorage.getItem('order_step');
-            return savedStep ? parseInt(savedStep) : 1;
-        }
-        return 1;
-    };
-
-    const getInitialForm = (): OrderFormState => {
-        if (typeof window !== 'undefined') {
-            const savedForm = localStorage.getItem('order_form');
-            if (savedForm) return JSON.parse(savedForm);
-        }
-        return {
-            packageId: preselected || '',
-            clientName: '',
-            brandName: '',
-            email: '',
-            phone: '',
-            address: '',
-            domainRequested: '',
-            subdomainRequested: '',
-            paymentType: 'full',
-        };
-    };
 
     const [step, setStep] = useState(1);
-    const [form, setForm] = useState<OrderFormState>(getInitialForm());
-    const [isClient, setIsClient] = useState(false);
-
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
     const [orderResult, setOrderResult] = useState<any>(null);
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const [form, setForm] = useState({
+        packageId: preselected || '',
+        clientName: '',
+        brandName: '',
+        email: '',
+        phone: '',
+        address: '',
+        domainRequested: '',
+        subdomainRequested: '',
+        paymentType: 'full',
+    });
 
     useEffect(() => {
         setIsClient(true);
@@ -91,6 +81,7 @@ function OrderWizardContent() {
         if (savedStep) setStep(parseInt(savedStep));
 
         fetch('/api/packages').then(r => r.json()).then(setPackages).catch(() => { });
+        fetch('/api/domains').then(r => r.json()).then(setDomainPrices).catch(() => { });
     }, []);
 
     // Auto-save effect
@@ -126,27 +117,6 @@ function OrderWizardContent() {
     }, [preselected]);
 
     const selectedPkg = packages.find(p => p.id === form.packageId);
-
-    const handleNext = () => {
-        if (canNext()) {
-            setStep(s => s + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            setTouched({
-                clientName: true,
-                brandName: true,
-                email: true,
-                phone: true,
-                subdomainRequested: true
-            });
-            showToast('Mohon lengkapi data yang diperlukan', 'warning');
-        }
-    };
-
-    const handleBack = () => {
-        setStep(s => s - 1);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -314,51 +284,25 @@ function OrderWizardContent() {
                     {/* Step 3: Domain */}
                     {step === 3 && (
                         <>
-                            <h2 className="wizard-title text-center">Pilih Domain</h2>
-                            <p className="wizard-subtitle text-center">Tentukan alamat website bimbel Anda</p>
-
-                            <div className={`card slide-in ${form.subdomainRequested ? 'border-accent' : ''}`}
-                                onClick={() => setForm({ ...form, subdomainRequested: form.subdomainRequested || 'namabimbel', domainRequested: '' })}
-                                style={{ cursor: 'pointer', marginBottom: '24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                    <div className={`radio-circle ${form.subdomainRequested ? 'checked' : ''}`}></div>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Subdomain Gratis</h3>
-                                </div>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <input
-                                            className="form-input"
-                                            placeholder="namabimbel"
-                                            value={form.subdomainRequested}
-                                            onChange={e => setForm({ ...form, subdomainRequested: e.target.value, domainRequested: '' })}
-                                            onClick={e => e.stopPropagation()}
-                                            style={{ flex: 1 }}
-                                        />
-                                        <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontWeight: 600 }}>.bimbelpro.com</span>
-                                    </div>
+                            <h2 className="wizard-title">Pilih Domain</h2>
+                            <p className="wizard-subtitle">Tentukan alamat website bimbel Anda</p>
+                            <div className="form-group">
+                                <label className="form-label">Subdomain Gratis</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input className="form-input" placeholder="namabimbel" value={form.subdomainRequested}
+                                        onChange={e => setForm({ ...form, subdomainRequested: e.target.value })}
+                                        style={{ flex: 1 }} />
+                                    <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>.bimbelpro.com</span>
                                 </div>
                             </div>
-
-                            <div className={`card slide-in ${form.domainRequested ? 'border-accent' : ''}`}
-                                style={{ cursor: 'pointer', animationDelay: '0.1s' }}
-                                onClick={() => setForm({ ...form, domainRequested: form.domainRequested || 'www.namabimbel.com', subdomainRequested: '' })}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                    <div className={`radio-circle ${form.domainRequested ? 'checked' : ''}`}></div>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Custom Domain + Rp 150rb</h3>
-                                </div>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <input
-                                        className="form-input"
-                                        placeholder="www.namabimbel.com"
-                                        value={form.domainRequested}
-                                        onChange={e => setForm({ ...form, domainRequested: e.target.value, subdomainRequested: '' })}
-                                        onClick={e => e.stopPropagation()}
-                                    />
-                                    <small style={{ color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
-                                        Kami akan membantu proses pembelian dan setup domain untuk Anda.
-                                    </small>
-                                </div>
+                            <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>atau</div>
+                            <div className="form-group">
+                                <label className="form-label">Custom Domain (Opsional)</label>
+                                <input className="form-input" placeholder="www.domainanda.com" value={form.domainRequested}
+                                    onChange={e => setForm({ ...form, domainRequested: e.target.value })} />
+                                <small style={{ color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
+                                    Tersedia untuk paket Pro dan Premium. Biaya domain ditanggung klien.
+                                </small>
                             </div>
                         </>
                     )}
@@ -369,30 +313,22 @@ function OrderWizardContent() {
                             <h2 className="wizard-title text-center">Review & Pembayaran</h2>
                             <p className="wizard-subtitle text-center">Cek kembali pesanan Anda sebelum checkout</p>
 
-                            {/* Order Recap */}
-                            <div className="card slide-in" style={{ marginBottom: '32px', background: 'var(--bg-secondary)', border: 'none' }}>
-                                <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '16px' }}>
-                                    🧾 Ringkasan Pesanan
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div>
-                                        <small className="text-muted block mb-1">Paket Website</small>
-                                        <div className="font-bold">{selectedPkg?.name}</div>
-                                    </div>
-                                    <div>
-                                        <small className="text-muted block mb-1">Domain</small>
-                                        <div className="font-bold">{form.subdomainRequested ? `${form.subdomainRequested}.bimbelpro.com` : form.domainRequested}</div>
-                                    </div>
-                                    <div>
-                                        <small className="text-muted block mb-1">Billing</small>
-                                        <div>{form.clientName}</div>
-                                        <div className="text-sm text-muted">{form.email}</div>
-                                    </div>
-                                    <div>
-                                        <small className="text-muted block mb-1">Total</small>
-                                        <div className="font-bold text-accent" style={{ fontSize: '1.2rem' }}>Rp {formatRp(selectedPkg?.price || 0)}</div>
-                                    </div>
+                            {selectedPkg && (
+                            <div style={{ background: 'var(--bg-input)', padding: '20px', borderRadius: 'var(--radius-md)', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Paket</span>
+                                    <span style={{ fontWeight: 700 }}>{selectedPkg.name}</span>
                                 </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Harga</span>
+                                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(selectedPkg.price)}</span>
+                                </div>
+                                {form.domainRequested && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Domain ({form.domainRequested})</span>
+                                        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(domainDisplayPrice)}/tahun</span>
+                                    </div>
+                                )}
                             </div>
 
                             <h3 className="slide-in" style={{ fontSize: '1.1rem', marginBottom: '16px', animationDelay: '0.1s' }}>Pilih Metode Pembayaran</h3>
