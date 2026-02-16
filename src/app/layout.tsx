@@ -38,7 +38,9 @@ export default function RootLayout({
     return (
         <html lang="id">
             <head>
-                <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+                <meta name="mobile-web-app-capable" content="yes" />
             </head>
             <body className={inter.className}>
                 <AuthProvider>

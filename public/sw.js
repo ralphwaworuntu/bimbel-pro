@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bimbelpro-v1';
+const CACHE_NAME = 'bimbelpro-v2';
 const STATIC_ASSETS = [
     '/',
     '/manifest.json',
@@ -31,8 +31,11 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Skip non-GET
+    // Skip non-GET requests
     if (request.method !== 'GET') return;
+
+    // Skip non-http(s) schemes (chrome-extension, etc.)
+    if (!url.protocol.startsWith('http')) return;
 
     // API calls: network first
     if (url.pathname.startsWith('/api/')) {
@@ -54,13 +57,17 @@ self.addEventListener('fetch', (event) => {
             if (cached) {
                 // Update cache in background
                 fetch(request).then((response) => {
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
+                    if (response && response.status === 200) {
+                        caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
+                    }
                 }).catch(() => { });
                 return cached;
             }
             return fetch(request).then((response) => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+                if (response && response.status === 200) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+                }
                 return response;
             });
         })
