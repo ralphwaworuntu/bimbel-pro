@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
@@ -95,6 +96,9 @@ export default function Navbar() {
                         >
                             Cek Order
                         </Link>
+                    </li>
+                    <li>
+                        <NotificationBell />
                     </li>
                     <li>
                         <ThemeToggle />

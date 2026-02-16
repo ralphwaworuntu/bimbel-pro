@@ -6,10 +6,16 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ScrollToTop from '@/components/ScrollToTop';
 import TestimonialCard from '@/components/TestimonialCard';
-import StatsCounter from '@/components/StatsCounter';
+import AnimatedCounter from '@/components/AnimatedCounter';
+import SkeletonLoader from '@/components/SkeletonLoader';
+import ScrollReveal from '@/components/ScrollReveal';
+import PortfolioModal, { Project } from '@/components/PortfolioModal';
 import TypingEffect from '@/components/TypingEffect';
 import ClientMarquee from '@/components/ClientMarquee';
 import { useToast } from '@/components/ToastProvider';
+import BackgroundParticles from '@/components/BackgroundParticles';
+import Spotlight from '@/components/Spotlight';
+import GradientBorder from '@/components/GradientBorder';
 
 interface Package {
     id: string;
@@ -29,6 +35,8 @@ export default function Home() {
     const [packages, setPackages] = useState<Package[]>([]);
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
     const [isAnnual, setIsAnnual] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { showToast } = useToast();
 
     useEffect(() => {
@@ -39,8 +47,9 @@ export default function Home() {
         setActiveFaq(activeFaq === index ? null : index);
     };
 
-    const handlePortfolioClick = (name: string) => {
-        showToast(`Membuka portfolio: ${name}`, 'info');
+    const handlePortfolioClick = (project: Project) => {
+        setSelectedProject(project);
+        setIsModalOpen(true);
     };
 
     return (
@@ -50,46 +59,47 @@ export default function Home() {
             {/* HERO SECTION */}
             <section className="hero">
                 <div className="hero-bg">
-                    {/* CSS-based particle effect simulation */}
-                    <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                    <BackgroundParticles />
                 </div>
                 <div className="container">
-                    <div className="hero-content animate-fadeInUp">
-                        <div className="hero-badge animate-glow">🔥 Platform #1 Website Bimbel</div>
-                        <h1>
-                            Bangun Website<br />
-                            Bimbel Anda<br />
-                            <span className="text-gradient">
-                                <TypingEffect
-                                    words={['Dalam Hitungan Hari', 'Dalam Hitungan Jam', 'Tanpa Ribet Coding']}
-                                    className="text-gradient-animated"
-                                />
-                            </span>
-                        </h1>
-                        <p>
-                            Solusi website bimbel white-label terlengkap untuk para pengusaha bimbel TNI & POLRI.
-                            Fitur tryout online, bank soal, dan manajemen siswa — semua sudah siap pakai!
-                        </p>
-                        <div className="hero-actions">
-                            <Link href="/order" className="btn btn-primary btn-lg">
-                                🚀 Pesan Sekarang
-                            </Link>
-                            <a href="#portfolio" className="btn btn-secondary btn-lg">
-                                Lihat Portfolio
-                            </a>
+                    <ScrollReveal>
+                        <div className="hero-content">
+                            <div className="hero-badge animate-glow">🔥 Platform #1 Website Bimbel</div>
+                            <h1>
+                                Bangun Website<br />
+                                Bimbel Anda<br />
+                                <span className="text-gradient">
+                                    <TypingEffect
+                                        words={['Dalam Hitungan Hari', 'Dalam Hitungan Jam', 'Tanpa Ribet Coding']}
+                                        className="text-gradient-animated"
+                                    />
+                                </span>
+                            </h1>
+                            <p>
+                                Solusi website bimbel white-label terlengkap untuk para pengusaha bimbel TNI & POLRI.
+                                Fitur tryout online, bank soal, dan manajemen siswa — semua sudah siap pakai!
+                            </p>
+                            <div className="hero-actions">
+                                <Link href="/order" className="btn btn-primary btn-lg">
+                                    🚀 Pesan Sekarang
+                                </Link>
+                                <a href="#portfolio" className="btn btn-secondary btn-lg">
+                                    Lihat Portfolio
+                                </a>
+                            </div>
+                            <div className="hero-stats">
+                                <div>
+                                    <AnimatedCounter end={50} suffix="+" label="Website Aktif" />
+                                </div>
+                                <div>
+                                    <AnimatedCounter end={10000} suffix="+" label="Siswa Terdaftar" />
+                                </div>
+                                <div>
+                                    <AnimatedCounter end={99} suffix="%" label="Uptime Server" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="hero-stats">
-                            <div>
-                                <StatsCounter end={50} suffix="+" label="Website Aktif" />
-                            </div>
-                            <div>
-                                <StatsCounter end={10000} suffix="+" label="Siswa Terdaftar" />
-                            </div>
-                            <div>
-                                <StatsCounter end={99} suffix="%" label="Uptime Server" />
-                            </div>
-                        </div>
-                    </div>
+                    </ScrollReveal>
                 </div>
             </section>
 
@@ -124,13 +134,17 @@ export default function Home() {
                             { icon: '📊', title: 'Analitik & Laporan', desc: 'Dashboard analitik lengkap untuk memantau performa bisnis bimbel Anda.' },
                             { icon: '📱', title: 'Mobile Friendly', desc: 'Website responsif yang nyaman diakses dari smartphone, tablet, dan desktop.' },
                         ].map((f, i) => (
-                            <div key={i} className={`feature-card animate-fadeInUp stagger-${(i % 3) + 1}`}>
-                                <div className="feature-icon" style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(236,72,153,0.1))', width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', marginBottom: '24px', fontSize: '2rem' }}>
-                                    {f.icon}
-                                </div>
-                                <h3>{f.title}</h3>
-                                <p>{f.desc}</p>
-                            </div>
+                            <ScrollReveal key={i} delay={i * 0.1}>
+                                <Spotlight className="h-full" color="rgba(249, 115, 22, 0.15)">
+                                    <div className={`feature-card card-tilt hover-lift`} style={{ height: '100%', background: 'var(--bg-card)' }}>
+                                        <div className="feature-icon" style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(236,72,153,0.1))', width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', marginBottom: '24px', fontSize: '2rem' }}>
+                                            {f.icon}
+                                        </div>
+                                        <h3>{f.title}</h3>
+                                        <p>{f.desc}</p>
+                                    </div>
+                                </Spotlight>
+                            </ScrollReveal>
                         ))}
                     </div>
                 </div>
@@ -149,18 +163,20 @@ export default function Home() {
                             { step: '2', title: 'Isi Data & Domain', desc: 'Tentukan nama bimbel dan domain (.com/.id) yang Anda inginkan.', icon: '✍️' },
                             { step: '3', title: 'Terima Beres', desc: 'Tim kami akan setup website Anda. Dalam 1-3 hari, website siap digunakan!', icon: '🚀' },
                         ].map((s, i) => (
-                            <div key={i} className="card animate-fadeInUp" style={{ position: 'relative', padding: '40px 24px' }}>
-                                <div style={{
-                                    width: '64px', height: '64px', background: 'var(--bg-primary)',
-                                    borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)',
-                                    margin: '0 auto 24px', border: '2px solid var(--accent)'
-                                }}>
-                                    {s.step}
+                            <ScrollReveal key={i} delay={i * 0.2} direction="up">
+                                <div className="card hover-scale" style={{ position: 'relative', padding: '40px 24px' }}>
+                                    <div style={{
+                                        width: '64px', height: '64px', background: 'var(--bg-primary)',
+                                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)',
+                                        margin: '0 auto 24px', border: '2px solid var(--accent)'
+                                    }}>
+                                        {s.step}
+                                    </div>
+                                    <h3>{s.title}</h3>
+                                    <p style={{ color: 'var(--text-secondary)' }}>{s.desc}</p>
                                 </div>
-                                <h3>{s.title}</h3>
-                                <p style={{ color: 'var(--text-secondary)' }}>{s.desc}</p>
-                            </div>
+                            </ScrollReveal>
                         ))}
                     </div>
                 </div>
@@ -175,28 +191,62 @@ export default function Home() {
                     </div>
                     <div className="portfolio-grid grid grid-2">
                         {[
-                            { icon: '🎖️', name: 'Bimbel Garuda Jaya', desc: 'Website bimbel TNI lengkap dengan tryout online dan manajemen 500+ siswa.', tags: ['TNI', 'Tryout', 'Premium'] },
-                            { icon: '⭐', name: 'Bimbel Patriot Academy', desc: 'Platform bimbel POLRI dengan bank soal 5000+ dan analitik performa.', tags: ['POLRI', 'Bank Soal', 'Pro'] },
-                            { icon: '🏆', name: 'Bimbel Prajurit Unggul', desc: 'Bimbel TNI & POLRI terintegrasi dengan sistem pembayaran otomatis.', tags: ['TNI & POLRI', 'Payment', 'Premium'] },
-                            { icon: '🎯', name: 'Bimbel Cendekia Nusantara', desc: 'Website bimbel multi-cabang dengan dashboard owner terpusat.', tags: ['Multi-Cabang', 'Dashboard', 'Pro'] },
+                            {
+                                icon: '🎖️',
+                                name: 'Bimbel Garuda Jaya',
+                                desc: 'Website bimbel TNI lengkap dengan tryout online dan manajemen 500+ siswa.',
+                                descriptionDetail: 'Bimbel Garuda Jaya adalah platform bimbel premier untuk persiapan masuk TNI. Dilengkapi dengan sistem tryout CAT yang mirip dengan tes asli, serta manajemen siswa yang komprehensif.',
+                                tags: ['TNI', 'Tryout', 'Premium'],
+                                images: ['https://placehold.co/800x400/1e293b/ffffff?text=Garuda+Jaya+Home', 'https://placehold.co/800x400/1e293b/ffffff?text=Tryout+System', 'https://placehold.co/800x400/1e293b/ffffff?text=Student+Dashboard'],
+                                stats: [{ label: 'Siswa Lolos', value: '450+' }, { label: 'Bank Soal', value: '2.500+' }]
+                            },
+                            {
+                                icon: '⭐',
+                                name: 'Bimbel Patriot Academy',
+                                desc: 'Platform bimbel POLRI dengan bank soal 5000+ dan analitik performa.',
+                                descriptionDetail: 'Patriot Academy fokus pada persiapan calon anggota POLRI. Fitur unggulannya adalah analisis performa mendalam yang membantu siswa mengetahui kelemahan mereka.',
+                                tags: ['POLRI', 'Bank Soal', 'Pro'],
+                                images: ['https://placehold.co/800x400/1e293b/ffffff?text=Patriot+Academy', 'https://placehold.co/800x400/1e293b/ffffff?text=Analitik+Siswa'],
+                                stats: [{ label: 'Pengguna Aktif', value: '1.200+' }, { label: 'Soal Latihan', value: '5.000+' }]
+                            },
+                            {
+                                icon: '🏆',
+                                name: 'Bimbel Prajurit Unggul',
+                                desc: 'Bimbel TNI & POLRI terintegrasi dengan sistem pembayaran otomatis.',
+                                descriptionDetail: 'Solusi all-in-one untuk bimbel TNI/POLRI dengan integrasi payment gateway, memudahkan pendaftaran dan pembayaran siswa secara otomatis 24/7.',
+                                tags: ['TNI & POLRI', 'Payment', 'Premium'],
+                                images: ['https://placehold.co/800x400/1e293b/ffffff?text=Prajurit+Unggul', 'https://placehold.co/800x400/1e293b/ffffff?text=Payment+Flow'],
+                                stats: [{ label: 'Transaksi', value: '500/bln' }, { label: 'Otomatisasi', value: '100%' }]
+                            },
+                            {
+                                icon: '🎯',
+                                name: 'Bimbel Cendekia Nusantara',
+                                desc: 'Website bimbel multi-cabang dengan dashboard owner terpusat.',
+                                descriptionDetail: 'Sistem manajemen untuk bimbel dengan banyak cabang. Owner dapat memantau performa tiap cabang, keuangan, dan jumlah siswa dari satu dashboard pusat.',
+                                tags: ['Multi-Cabang', 'Dashboard', 'Pro'],
+                                images: ['https://placehold.co/800x400/1e293b/ffffff?text=Cendekia+Pusat', 'https://placehold.co/800x400/1e293b/ffffff?text=Cabang+Management'],
+                                stats: [{ label: 'Cabang', value: '12' }, { label: 'Total Siswa', value: '2.000+' }]
+                            },
                         ].map((p, i) => (
-                            <div key={i} className={`card portfolio-card animate-fadeInUp stagger-${(i % 2) + 1}`} style={{ padding: '0', cursor: 'pointer' }} onClick={() => handlePortfolioClick(p.name)}>
-                                <div style={{ height: '240px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', position: 'relative' }}>
-                                    {p.icon}
-                                    <div className="portfolio-overlay">
-                                        <button className="btn btn-primary btn-sm">Lihat Detail</button>
+                            <ScrollReveal key={i} delay={i * 0.1}>
+                                <div className={`card portfolio-card hover-glow`} style={{ padding: '0', cursor: 'pointer' }} onClick={() => handlePortfolioClick(p as Project)}>
+                                    <div style={{ height: '240px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', position: 'relative' }}>
+                                        {p.icon}
+                                        <div className="portfolio-overlay">
+                                            <button className="btn btn-primary btn-sm">Lihat Detail</button>
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '24px' }}>
+                                        <h3 style={{ marginBottom: '8px' }}>{p.name}</h3>
+                                        <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{p.desc}</p>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                            {p.tags.map(t => (
+                                                <span key={t} className="badge badge-info">{t}</span>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                                <div style={{ padding: '24px' }}>
-                                    <h3 style={{ marginBottom: '8px' }}>{p.name}</h3>
-                                    <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{p.desc}</p>
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                        {p.tags.map(t => (
-                                            <span key={t} className="badge badge-info">{t}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                            </ScrollReveal>
                         ))}
                     </div>
                 </div>
@@ -254,7 +304,7 @@ export default function Home() {
                         {packages.length > 0 ? packages.map((pkg, i) => (
                             <PricingCard key={pkg.id} pkg={pkg} index={i} isAnnual={isAnnual} />
                         )) : (
-                            // Fallback if API hasn't loaded or failed
+                            // Fallback / Loading state using Skeleton if needed, or static data
                             <>
                                 {[
                                     { tier: 'basic', name: 'Basic', price: 2500000, monthlyFee: 150000, features: ['Website bimbel responsive', 'Pendaftaran siswa online', 'Bank soal (max 500)', 'Tryout online (max 10)', 'Subdomain gratis'] },
@@ -310,18 +360,25 @@ export default function Home() {
             {/* CTA */}
             <section className="cta-section">
                 <div className="container">
-                    <div className="cta-card animate-fadeInUp">
-                        <h2>Siap Memulai Bisnis Bimbel Online?</h2>
-                        <p>Bergabung dengan 50+ pengusaha bimbel yang sudah mempercayakan website mereka kepada kami</p>
-                        <Link href="/order" className="btn btn-primary btn-lg" style={{ position: 'relative' }}>
-                            🚀 Mulai Sekarang
-                        </Link>
-                    </div>
+                    <ScrollReveal>
+                        <div className="cta-card">
+                            <h2>Siap Memulai Bisnis Bimbel Online?</h2>
+                            <p>Bergabung dengan 50+ pengusaha bimbel yang sudah mempercayakan website mereka kepada kami</p>
+                            <Link href="/order" className="btn btn-primary btn-lg" style={{ position: 'relative' }}>
+                                🚀 Mulai Sekarang
+                            </Link>
+                        </div>
+                    </ScrollReveal>
                 </div>
             </section>
 
             <Footer />
             <ScrollToTop />
+            <PortfolioModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                project={selectedProject}
+            />
         </>
     );
 }
@@ -329,8 +386,8 @@ export default function Home() {
 function PricingCard({ pkg, index, isAnnual }: { pkg: Package, index: number, isAnnual: boolean }) {
     const monthlyFee = isAnnual ? pkg.monthlyFee * 12 * 0.8 : pkg.monthlyFee;
 
-    return (
-        <div className={`pricing-card ${pkg.tier === 'pro' ? 'popular' : ''} animate-fadeInUp stagger-${index + 1}`}>
+    const CardContent = (
+        <div className={`pricing-card ${pkg.tier === 'pro' ? 'popular' : ''} hover-lift`} style={{ height: '100%' }}>
             {pkg.tier === 'pro' && <span className="pricing-popular-badge">Paling Populer</span>}
             <div className="pricing-tier">{pkg.tier}</div>
             <div className="pricing-name">{pkg.name}</div>
@@ -348,5 +405,17 @@ function PricingCard({ pkg, index, isAnnual }: { pkg: Package, index: number, is
                 Pilih {pkg.name}
             </Link>
         </div>
+    );
+
+    return (
+        <ScrollReveal className={`pricing-card-wrapper`} delay={index * 0.1}>
+            {pkg.tier === 'pro' ? (
+                <GradientBorder width="2px" radius="16px">
+                    {CardContent}
+                </GradientBorder>
+            ) : (
+                CardContent
+            )}
+        </ScrollReveal>
     );
 }

@@ -7,6 +7,8 @@ import Navbar from '@/components/Navbar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Confetti from '@/components/Confetti';
 import { useToast } from '@/components/ToastProvider';
+import StepIndicator from '@/components/StepIndicator';
+import FormField from '@/components/FormField';
 
 interface Package {
     id: string;
@@ -207,32 +209,7 @@ function OrderWizardContent() {
                 {step === 5 && <Confetti />}
 
                 {/* Progress Bar Animated */}
-                <div className="wizard-progress-track" style={{
-                    height: '4px', background: 'var(--border)', borderRadius: '4px', marginBottom: '32px', position: 'relative', overflow: 'hidden'
-                }}>
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, bottom: 0, background: 'var(--accent)',
-                        width: `${((step - 1) / (STEPS.length - 1)) * 100}%`, transition: 'width 0.4s ease'
-                    }}></div>
-                </div>
-
-                <div className="wizard-progress">
-                    {STEPS.map((s, i) => (
-                        <div key={s.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div className={`wizard-step ${step === s.num ? 'active' : ''} ${step > s.num ? 'completed' : ''}`}>
-                                <div className="wizard-step-num">
-                                    {step > s.num ? '✓' : s.num}
-                                </div>
-                            </div>
-                            <span style={{
-                                fontSize: '0.8rem', marginTop: '8px', fontWeight: 600,
-                                color: step === s.num ? 'var(--accent)' : step > s.num ? 'var(--success)' : 'var(--text-muted)'
-                            }}>
-                                {s.label}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                <StepIndicator currentStep={step} steps={STEPS} />
 
                 <div className="wizard-card animate-fadeInUp" key={step} style={{ minHeight: '400px' }}>
                     {/* Step 1: Pilih Paket */}
@@ -272,56 +249,64 @@ function OrderWizardContent() {
                             <h2 className="wizard-title text-center">Data Bisnis Anda</h2>
                             <p className="wizard-subtitle text-center">Isi data pemilik dan brand bimbel Anda</p>
                             <div className="form-group slide-in">
-                                <label className="form-label">Nama Pemilik <span className="text-danger">*</span></label>
-                                <input
-                                    className={`form-input ${touched.clientName && !form.clientName ? 'error' : ''}`}
+                                <FormField
+                                    label="Nama Pemilik"
                                     placeholder="Nama lengkap Anda"
                                     value={form.clientName}
                                     onChange={e => setForm({ ...form, clientName: e.target.value })}
                                     onBlur={() => handleBlur('clientName')}
+                                    error={touched.clientName && !form.clientName ? 'Wajib diisi' : undefined}
+                                    touched={touched.clientName}
+                                    required
                                 />
-                                {touched.clientName && !form.clientName && <small className="text-danger">Wajib diisi</small>}
                             </div>
                             <div className="form-group slide-in" style={{ animationDelay: '0.1s' }}>
-                                <label className="form-label">Nama Brand Bimbel <span className="text-danger">*</span></label>
-                                <input
-                                    className={`form-input ${touched.brandName && !form.brandName ? 'error' : ''}`}
+                                <FormField
+                                    label="Nama Brand Bimbel"
                                     placeholder='Contoh: "Bimbel Garuda Jaya"'
                                     value={form.brandName}
                                     onChange={e => setForm({ ...form, brandName: e.target.value })}
                                     onBlur={() => handleBlur('brandName')}
+                                    error={touched.brandName && !form.brandName ? 'Wajib diisi' : undefined}
+                                    touched={touched.brandName}
+                                    required
                                 />
-                                {touched.brandName && !form.brandName && <small className="text-danger">Wajib diisi</small>}
                             </div>
                             <div className="grid grid-2">
                                 <div className="form-group slide-in" style={{ animationDelay: '0.2s' }}>
-                                    <label className="form-label">Email <span className="text-danger">*</span></label>
-                                    <input
-                                        className={`form-input ${touched.email && !form.email ? 'error' : ''}`}
+                                    <FormField
+                                        label="Email"
                                         type="email"
                                         placeholder="email@example.com"
                                         value={form.email}
                                         onChange={e => setForm({ ...form, email: e.target.value })}
                                         onBlur={() => handleBlur('email')}
+                                        error={touched.email && !form.email ? 'Wajib diisi' : undefined}
+                                        touched={touched.email}
+                                        required
                                     />
-                                    {touched.email && !form.email && <small className="text-danger">Wajib diisi</small>}
                                 </div>
                                 <div className="form-group slide-in" style={{ animationDelay: '0.3s' }}>
-                                    <label className="form-label">WhatsApp <span className="text-danger">*</span></label>
-                                    <input
-                                        className={`form-input ${touched.phone && !form.phone ? 'error' : ''}`}
+                                    <FormField
+                                        label="WhatsApp"
                                         placeholder="08xxxxxxxxxx"
                                         value={form.phone}
                                         onChange={e => setForm({ ...form, phone: e.target.value })}
                                         onBlur={() => handleBlur('phone')}
+                                        error={touched.phone && !form.phone ? 'Wajib diisi' : undefined}
+                                        touched={touched.phone}
+                                        required
                                     />
-                                    {touched.phone && !form.phone && <small className="text-danger">Wajib diisi</small>}
                                 </div>
                             </div>
                             <div className="form-group slide-in" style={{ animationDelay: '0.4s' }}>
-                                <label className="form-label">Alamat</label>
-                                <textarea className="form-textarea" placeholder="Alamat bisnis bimbel Anda" value={form.address}
-                                    onChange={e => setForm({ ...form, address: e.target.value })} style={{ minHeight: '80px' }} />
+                                <FormField
+                                    label="Alamat"
+                                    as="textarea"
+                                    placeholder="Alamat bisnis bimbel Anda"
+                                    value={form.address}
+                                    onChange={e => setForm({ ...form, address: e.target.value })}
+                                />
                             </div>
                         </>
                     )}
