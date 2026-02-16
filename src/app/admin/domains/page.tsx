@@ -134,8 +134,8 @@ export default function AdminDomainsPage() {
                     <h1 className="page-title">🌐 Domain & Harga</h1>
                     <p className="page-subtitle">Kelola harga dan promo ekstensi domain</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>
-                    {showAdd ? '✕ Tutup' : '+ Tambah Domain'}
+                <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                    + Tambah Domain
                 </button>
             </div>
 
@@ -212,42 +212,51 @@ export default function AdminDomainsPage() {
                 </div>
             )}
 
-            {/* Add New Domain Form */}
+            {/* Add New Domain Modal */}
             {showAdd && (
-                <div className="card animate-fadeIn" style={{ marginBottom: '24px' }}>
-                    <h3 style={{ marginBottom: '20px', fontWeight: 700 }}>Tambah Ekstensi Domain Baru</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div className="form-group">
-                            <label className="form-label">Extension *</label>
-                            <input className="form-input" placeholder=".com" value={newDomain.extension}
-                                onChange={e => setNewDomain({ ...newDomain, extension: e.target.value })} />
+                <div className="dm-overlay" onClick={() => setShowAdd(false)}>
+                    <div className="dm-modal dm-modal-wide" onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <div className="dm-modal-icon" style={{ textAlign: 'left', marginBottom: '4px', fontSize: '1.8rem' }}>🌐</div>
+                                <h3 className="dm-modal-title" style={{ textAlign: 'left' }}>Tambah Ekstensi Domain Baru</h3>
+                                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>Isi form di bawah untuk menambahkan domain baru</p>
+                            </div>
+                            <button className="dp-close-btn" onClick={() => setShowAdd(false)}>✕</button>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Label *</label>
-                            <input className="form-input" placeholder="Domain .com" value={newDomain.label}
-                                onChange={e => setNewDomain({ ...newDomain, label: e.target.value })} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="form-group">
+                                <label className="form-label">Extension *</label>
+                                <input className="form-input" placeholder=".com" value={newDomain.extension}
+                                    onChange={e => setNewDomain({ ...newDomain, extension: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Label *</label>
+                                <input className="form-input" placeholder="Domain .com" value={newDomain.label}
+                                    onChange={e => setNewDomain({ ...newDomain, label: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Harga Asli (Rp/tahun) *</label>
+                                <input className="form-input" type="number" placeholder="199000" value={newDomain.price}
+                                    onChange={e => setNewDomain({ ...newDomain, price: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Harga Promo (Rp/tahun)</label>
+                                <input className="form-input" type="number" placeholder="Kosongkan jika tidak ada promo" value={newDomain.promoPrice}
+                                    onChange={e => setNewDomain({ ...newDomain, promoPrice: e.target.value })} />
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Harga Asli (Rp/tahun) *</label>
-                            <input className="form-input" type="number" placeholder="199000" value={newDomain.price}
-                                onChange={e => setNewDomain({ ...newDomain, price: e.target.value })} />
+                        <div className="form-group" style={{ marginTop: '4px' }}>
+                            <label className="form-label">Deskripsi</label>
+                            <input className="form-input" placeholder="Deskripsi singkat domain" value={newDomain.description}
+                                onChange={e => setNewDomain({ ...newDomain, description: e.target.value })} />
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Harga Promo (Rp/tahun)</label>
-                            <input className="form-input" type="number" placeholder="Kosongkan jika tidak ada promo" value={newDomain.promoPrice}
-                                onChange={e => setNewDomain({ ...newDomain, promoPrice: e.target.value })} />
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowAdd(false)}>Batal</button>
+                            <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+                                {saving ? 'Menyimpan...' : '💾 Simpan Domain'}
+                            </button>
                         </div>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Deskripsi</label>
-                        <input className="form-input" placeholder="Deskripsi singkat domain" value={newDomain.description}
-                            onChange={e => setNewDomain({ ...newDomain, description: e.target.value })} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                        <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
-                            {saving ? 'Menyimpan...' : '💾 Simpan'}
-                        </button>
-                        <button className="btn btn-secondary" onClick={() => setShowAdd(false)}>Batal</button>
                     </div>
                 </div>
             )}
@@ -742,6 +751,28 @@ export default function AdminDomainsPage() {
                 .dm-modal-desc { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
                 .dm-modal-actions { display: flex; gap: 12px; justify-content: center; }
                 .dm-modal-actions .btn { min-width: 120px; }
+                .dm-modal-wide { max-width: 560px; text-align: left; }
+                .dp-close-btn {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 10px;
+                    border: 1px solid var(--border);
+                    background: var(--bg-secondary);
+                    color: var(--text-muted);
+                    font-size: 1rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    font-family: inherit;
+                }
+                .dp-close-btn:hover {
+                    background: rgba(239,68,68,0.1);
+                    color: var(--danger);
+                    border-color: rgba(239,68,68,0.3);
+                }
 
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
