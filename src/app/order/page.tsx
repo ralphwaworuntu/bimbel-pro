@@ -56,7 +56,16 @@ interface OrderFormState {
 function OrderWizardContent() {
     const searchParams = useSearchParams();
     const preselected = searchParams.get('package');
+    const { showToast } = useToast();
+
+    const [isClient, setIsClient] = useState(false);
     const [step, setStep] = useState(1);
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [domainPrices, setDomainPrices] = useState<DomainPriceItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [orderResult, setOrderResult] = useState<any>(null);
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+
     const [form, setForm] = useState({
         packageId: preselected || '',
         clientName: '',
@@ -68,22 +77,13 @@ function OrderWizardContent() {
         subdomainRequested: '',
         paymentType: 'full',
     });
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const [isClient, setIsClient] = useState(false);
-
-    // Data packaging
-    const [packages, setPackages] = useState<Package[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [orderResult, setOrderResult] = useState<any>(null);
 
     // Domain check state
-    const [domainPrices, setDomainPrices] = useState<DomainPriceItem[]>([]);
     const [domainName, setDomainName] = useState('');
     const [selectedExt, setSelectedExt] = useState('.com');
     const [domainCheckResult, setDomainCheckResult] = useState<{ available: boolean; message: string } | null>(null);
     const [checkingDomain, setCheckingDomain] = useState(false);
     const [domainMode, setDomainMode] = useState<'subdomain' | 'custom'>('subdomain');
-    const { showToast } = useToast();
 
     useEffect(() => {
         setIsClient(true);
@@ -131,10 +131,19 @@ function OrderWizardContent() {
     }, [preselected]);
 
     const selectedPkg = packages.find(p => p.id === form.packageId);
+
+    const getDomainPrice = () => {
+        if (!form.domainRequested) return 0;
+        const ext = form.domainRequested.split('.').pop();
+        const domainItem = domainPrices.find(d => d.extension === ext || d.extension === `.${ext}`);
+        return domainItem ? (domainItem.promoActive && domainItem.promoPrice ? domainItem.promoPrice : domainItem.price) : 0;
+    };
+
+    // Combine logic: try to use getDomainPrice, but also support checking logic
     const selectedDomainPrice = domainPrices.find(d => d.extension === selectedExt);
-    const domainDisplayPrice = selectedDomainPrice
+    const domainDisplayPrice = getDomainPrice() || (selectedDomainPrice
         ? (selectedDomainPrice.promoActive && selectedDomainPrice.promoPrice != null ? selectedDomainPrice.promoPrice : selectedDomainPrice.price)
-        : 0;
+        : 0);
 
     const checkDomain = async () => {
         if (!domainName.trim()) return;
@@ -180,8 +189,18 @@ function OrderWizardContent() {
             setStep(s => s + 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            setTouched({ clientName: true, brandName: true, email: true, phone: true, subdomainRequested: true });
-            showToast('Mohon lengkapi data yang diperlukan', 'warning');
+            if (step === 2) {
+                setTouched({
+                    clientName: true,
+                    brandName: true,
+                    email: true,
+                    phone: true
+                });
+                showToast('Mohon lengkapi data yang wajib diisi', 'warning');
+            }
+            if (step === 3 && !form.subdomainRequested && !form.domainRequested) {
+                showToast('Pilih salah satu domain', 'warning');
+            }
         }
     };
 
