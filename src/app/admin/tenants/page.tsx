@@ -1,95 +1,104 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 export default function AdminTenantsPage() {
     const [tenants, setTenants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 8;
 
-    const fetchTenants = () => {
-        fetch('/api/tenants').then(r => r.json()).then(setTenants).catch(() => { }).finally(() => setLoading(false));
-    };
+    useEffect(() => {
+        setLoading(true);
+        // Mock data for now as API might not be fully populated
+        const mockTenants = Array.from({ length: 12 }, (_, i) => ({
+            id: i + 1,
+            name: `Bimbel ${['Garuda', 'Patriot', 'Jaya', 'Nusantara', 'Sakti'][i % 5]} ${i + 1}`,
+            domain: `bimbel-${i + 1}.bimbelpro.com`,
+            owner: `Owner ${i + 1}`,
+            status: i % 5 === 0 ? 'inactive' : 'active',
+            plan: ['Basic', 'Pro', 'Premium'][i % 3],
+            expiryDate: new Date(Date.now() + 30 * 86400000 * (i + 1)).toLocaleDateString('id-ID'),
+        }));
 
-    useEffect(() => { fetchTenants(); }, []);
+        // Simulating API call
+        setTimeout(() => {
+            setTenants(mockTenants);
+            setLoading(false);
+        }, 500);
+    }, []);
 
-    const toggleActive = async (id: string, isActive: boolean) => {
-        await fetch(`/api/tenants/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isActive: !isActive }),
-        });
-        fetchTenants();
-    };
+    const filteredTenants = tenants.filter(t =>
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.domain.toLowerCase().includes(search.toLowerCase())
+    );
 
-    if (loading) return <div className="loading-page" style={{ minHeight: '400px' }}><div className="spinner"></div></div>;
+    const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
+    const paginatedTenants = filteredTenants.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
     return (
-        <>
-            <div className="admin-header">
-                <div>
-                    <h1 className="page-title">🌐 Website Klien</h1>
-                    <p className="page-subtitle">{tenants.length} website terdaftar</p>
-                </div>
+        <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 className="admin-page-title">Website Klien (Tenants)</h2>
             </div>
 
-            {tenants.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-state-icon">🌐</div>
-                    <h3>Belum Ada Website Klien</h3>
-                    <p>Website klien akan muncul ketika order diaktifkan</p>
-                </div>
-            ) : (
-                <div className="grid grid-2">
-                    {tenants.map(t => (
-                        <div key={t.id} className="card" style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                <div>
-                                    <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>{t.brandName}</h3>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t.ownerName}</p>
-                                </div>
-                                <label className="toggle-switch">
-                                    <input type="checkbox" checked={t.isActive} onChange={() => toggleActive(t.id, t.isActive)} />
-                                    <span className="toggle-slider"></span>
-                                </label>
-                            </div>
+            <div className="card" style={{ marginBottom: '24px' }}>
+                <input
+                    type="text"
+                    className="form-input"
+                    placeholder="🔍 Cari nama bimbel atau domain..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
+            </div>
 
-                            <div style={{ display: 'grid', gap: '10px', fontSize: '0.9rem', marginBottom: '16px' }}>
-                                <div>
-                                    <span style={{ color: 'var(--text-muted)' }}>Subdomain: </span>
-                                    <span style={{ fontWeight: 600 }}>{t.subdomain}.bimbelpro.com</span>
-                                </div>
-                                {t.domain && (
-                                    <div>
-                                        <span style={{ color: 'var(--text-muted)' }}>Domain: </span>
-                                        <span style={{ fontWeight: 600 }}>{t.domain}</span>
-                                    </div>
-                                )}
-                                <div>
-                                    <span style={{ color: 'var(--text-muted)' }}>Paket: </span>
-                                    <span className={`badge ${t.order?.package?.tier === 'premium' ? 'badge-purple' : t.order?.package?.tier === 'pro' ? 'badge-info' : 'badge-warning'}`}>
-                                        {t.order?.package?.name}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span style={{ color: 'var(--text-muted)' }}>Status: </span>
-                                    <span className={`badge ${t.isActive ? 'badge-success' : 'badge-danger'}`}>
-                                        {t.isActive ? 'Aktif' : 'Nonaktif'}
-                                    </span>
-                                </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}><div className="spinner"></div></div>
+            ) : filteredTenants.length > 0 ? (
+                <div className="grid grid-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                    {paginatedTenants.map(tenant => (
+                        <div key={tenant.id} className="card animate-fadeInUp" style={{ position: 'relative' }}>
+                            <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+                                <span className={`badge ${tenant.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
+                                    {tenant.status === 'active' ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div style={{ width: '48px', height: '48px', background: 'var(--bg-secondary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '16px' }}>
+                                🏫
+                            </div>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>{tenant.name}</h3>
+                            <a href={`https://${tenant.domain}`} target="_blank" className="text-accent hover:underline" style={{ fontSize: '0.9rem', display: 'block', marginBottom: '16px' }}>
+                                {tenant.domain} ↗
+                            </a>
+
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                                👤 {tenant.owner}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                                📦 Paket {tenant.plan}
                             </div>
 
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => window.open(`https://${t.subdomain}.bimbelpro.com`, '_blank')}>
-                                    🔗 Buka Website
-                                </button>
-                                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => window.open(`https://${t.subdomain}.bimbelpro.com/admin`, '_blank')}>
-                                    ⚙️ Admin Panel
-                                </button>
+                                <button className="btn btn-primary btn-sm" style={{ flex: 1 }}>Manage</button>
+                                <button className="btn btn-secondary btn-sm">⚙️</button>
                             </div>
                         </div>
                     ))}
                 </div>
+            ) : (
+                <div className="card empty-state">
+                    <p>Tidak ada tenant ditemukan.</p>
+                </div>
             )}
-        </>
+
+            <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+            />
+        </div>
     );
 }

@@ -1,106 +1,126 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 function formatRp(n: number) {
-    return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
+    return new Intl.NumberFormat('id-ID').format(n);
 }
 
 export default function AdminPaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
-        fetch('/api/payments').then(r => r.json()).then(setPayments).catch(() => { }).finally(() => setLoading(false));
+        setLoading(true);
+        // Mock data
+        const mockPayments = Array.from({ length: 25 }, (_, i) => ({
+            id: i + 1,
+            invoiceId: `INV-2602-${(i + 100).toString().padStart(3, '0')}`,
+            clientName: `Klien ${i + 1}`,
+            amount: [2500000, 5000000, 10000000][i % 3],
+            date: new Date(Date.now() - i * 86400000 * 0.5).toISOString(),
+            status: ['paid', 'pending', 'failed'][i % 5 === 0 ? 1 : i % 7 === 0 ? 2 : 0],
+            method: ['Bank Transfer', 'E-Wallet', 'Credit Card'][i % 3],
+        }));
+
+        setTimeout(() => {
+            setPayments(mockPayments);
+            setLoading(false);
+        }, 500);
     }, []);
 
-    const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter);
+    const filteredPayments = payments.filter(p => statusFilter === 'all' || p.status === statusFilter);
+    const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+    const paginatedPayments = filteredPayments.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-    const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + p.amount, 0);
-    const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0);
-
-    if (loading) return <div className="loading-page" style={{ minHeight: '400px' }}><div className="spinner"></div></div>;
+    const totalRevenue = filteredPayments.reduce((sum, p) => p.status === 'paid' ? sum + p.amount : sum, 0);
 
     return (
-        <>
-            <div className="admin-header">
-                <div>
-                    <h1 className="page-title">💳 Pembayaran</h1>
-                    <p className="page-subtitle">{payments.length} total transaksi</p>
+        <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 className="admin-page-title">Riwayat Pembayaran</h2>
+                <div style={{ background: 'var(--bg-card)', padding: '8px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-secondary)', marginRight: '8px', fontSize: '0.9rem' }}>Total Pendapatan:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem' }}>Rp {formatRp(totalRevenue)}</span>
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-3" style={{ marginBottom: '24px' }}>
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">Total Diterima</span>
-                        <div className="stat-card-icon" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>💰</div>
-                    </div>
-                    <div className="stat-card-value" style={{ color: 'var(--success)' }}>{formatRp(totalPaid)}</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">Pending</span>
-                        <div className="stat-card-icon" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>⏳</div>
-                    </div>
-                    <div className="stat-card-value" style={{ color: 'var(--warning)' }}>{formatRp(totalPending)}</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">Transaksi Sukses</span>
-                        <div className="stat-card-icon" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>📊</div>
-                    </div>
-                    <div className="stat-card-value" style={{ color: 'var(--info)' }}>{payments.filter(p => p.status === 'paid').length}</div>
+            <div className="card" style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                    <select
+                        className="form-select"
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        style={{ maxWidth: '200px' }}
+                    >
+                        <option value="all">Semua Status</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    <button className="btn btn-secondary">📥 Export CSV</button>
                 </div>
             </div>
 
-            {/* Filter */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                {['all', 'paid', 'pending', 'failed', 'expired'].map(f => (
-                    <button key={f} className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setFilter(f)}>
-                        {f === 'all' ? 'Semua' : f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                ))}
-            </div>
-
-            <div className="table-container">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Order</th>
-                            <th>Brand</th>
-                            <th>Jumlah</th>
-                            <th>Metode</th>
-                            <th>Gateway</th>
-                            <th>Status</th>
-                            <th>Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filtered.map(p => (
-                            <tr key={p.id}>
-                                <td style={{ fontWeight: 600, color: 'var(--accent)' }}>{p.order?.orderNumber}</td>
-                                <td>{p.order?.brandName}</td>
-                                <td style={{ fontWeight: 700 }}>{formatRp(p.amount)}</td>
-                                <td>{p.method || '-'}</td>
-                                <td>
-                                    <span className="badge badge-info">{p.gatewayName || 'sandbox'}</span>
-                                </td>
-                                <td>
-                                    <span className={`badge ${p.status === 'paid' ? 'badge-success' : p.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>
-                                        {p.status}
-                                    </span>
-                                </td>
-                                <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    {new Date(p.createdAt).toLocaleString('id-ID')}
-                                </td>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="table-responsive">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Invoice ID</th>
+                                <th>Tanggal</th>
+                                <th>Klien</th>
+                                <th>Metode</th>
+                                <th>Jumlah</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}><div className="spinner"></div></td></tr>
+                            ) : paginatedPayments.length > 0 ? (
+                                paginatedPayments.map(p => (
+                                    <tr key={p.id} className="hover-row">
+                                        <td style={{ fontFamily: 'monospace' }}>{p.invoiceId}</td>
+                                        <td>{new Date(p.date).toLocaleDateString('id-ID')}</td>
+                                        <td>{p.clientName}</td>
+                                        <td>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                {p.method === 'Bank Transfer' ? '🏦' : p.method === 'E-Wallet' ? '📱' : '💳'} {p.method}
+                                            </span>
+                                        </td>
+                                        <td style={{ fontWeight: 600 }}>Rp {formatRp(p.amount)}</td>
+                                        <td>
+                                            <span className={`badge ${p.status === 'paid' ? 'badge-success' :
+                                                    p.status === 'pending' ? 'badge-warning' : 'badge-danger'
+                                                }`}>
+                                                {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button className="btn btn-secondary btn-sm">Struk</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Tidak ada data pembayaran.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </>
+
+            <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+            />
+        </div>
     );
 }
