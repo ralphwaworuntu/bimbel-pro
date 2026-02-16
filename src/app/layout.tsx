@@ -6,8 +6,10 @@ import AuthProvider from '@/components/AuthProvider';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import ToastProvider from '@/components/ToastProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import AppConfigProvider from '@/components/AppConfigProvider';
 import RouteProgress from '@/components/RouteProgress';
 import FloatingWhatsApp from '@/components/FloatingWhatsApp';
+import prisma from '@/lib/prisma';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,11 +32,15 @@ export const viewport: Viewport = {
     maximumScale: 1,
 };
 
-export default function RootLayout({
+// RootLayout is an async Server Component
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    // Fetch global app configuration from database
+    const appConfig = await prisma.appConfig.findFirst();
+
     return (
         <html lang="id">
             <head>
@@ -44,16 +50,18 @@ export default function RootLayout({
             </head>
             <body className={inter.className}>
                 <AuthProvider>
-                    <ThemeProvider>
-                        <Suspense fallback={null}>
-                            <RouteProgress />
-                        </Suspense>
-                        <FloatingWhatsApp />
-                        <ToastProvider>
-                            {children}
-                            <ScrollAnimation />
-                        </ToastProvider>
-                    </ThemeProvider>
+                    <AppConfigProvider initialConfig={appConfig || undefined}>
+                        <ThemeProvider>
+                            <Suspense fallback={null}>
+                                <RouteProgress />
+                            </Suspense>
+                            <FloatingWhatsApp />
+                            <ToastProvider>
+                                {children}
+                                <ScrollAnimation />
+                            </ToastProvider>
+                        </ThemeProvider>
+                    </AppConfigProvider>
                 </AuthProvider>
             </body>
         </html>

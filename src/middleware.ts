@@ -8,21 +8,24 @@ export async function middleware(request: NextRequest) {
     const hostname = request.headers.get('host') ?? '';
 
     // Handle subdomain extraction
-    // Localhost: foo.localhost:3000 -> foo
+    // Localhost: foo.localhost:3001 -> foo
     // Production: foo.bimbelpro.com -> foo
     let currentHost = hostname;
-    if (process.env.NODE_ENV === 'production') {
+    const isLocalhost = hostname.includes('localhost');
+
+    if (isLocalhost) {
+        // If it has .localhost:PORT or .localhost, treat as subdomain
+        // Otherwise (just localhost:PORT), treat as main
+        currentHost = hostname.replace(/\.localhost(:[0-9]+)?$/, '');
+    } else {
         const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'bimbelpro.com';
         currentHost = hostname.replace(`.${rootDomain}`, '');
-    } else {
-        currentHost = hostname.replace('.localhost:3000', '');
     }
 
     // Check if it's the main domain
-    // If replacement didn't change anything (except port), or it's 'www', it's main.
-    // For localhost:3000, currentHost is 'localhost:3000'.
+    // If replacement didn't change anything (except port for production), or it's 'www', it's main.
     const isMainDomain =
-        currentHost === 'localhost:3000' ||
+        (isLocalhost && currentHost === hostname) ||
         currentHost === (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'bimbelpro.com') ||
         currentHost === 'www';
 
