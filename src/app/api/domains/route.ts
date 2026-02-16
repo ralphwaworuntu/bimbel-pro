@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// GET - list all active domain prices (public)
-export async function GET() {
+// GET - list domain prices (public: active only, admin: all with ?all=true)
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const showAll = searchParams.get('all') === 'true';
+
         const domains = await prisma.domainPrice.findMany({
-            where: { isActive: true },
+            where: showAll ? {} : { isActive: true },
             orderBy: { sortOrder: 'asc' },
         });
         return NextResponse.json(domains);
