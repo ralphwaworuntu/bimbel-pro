@@ -11,6 +11,7 @@ const navItems = [
     { href: '/admin/tenants', label: 'Website Klien', icon: '🌐' },
     { href: '/admin/payments', label: 'Pembayaran', icon: '💳' },
     { href: '/admin/analytics', label: 'Analitik', icon: '📈' },
+    { href: '/admin/domains', label: 'Domain & Harga', icon: '🔗' },
     { href: '/admin/gateway', label: 'Payment Gateway', icon: '⚙️' },
 ];
 

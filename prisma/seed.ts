@@ -216,6 +216,52 @@ async function main() {
         }
     }
     console.log('✅ Sample orders seeded');
+
+    // Seed domain prices (harga asli / original prices)
+    const domainPrices = [
+        { extension: '.com', label: 'Domain .com', description: 'Domain terpopuler untuk segala kebutuhan website Anda', price: 199000, sortOrder: 1 },
+        { extension: '.id', label: 'Domain .id', description: 'Domain resmi ekstensi terpopuler untuk website di dalam Indonesia', price: 360000, sortOrder: 2 },
+        { extension: '.co.id', label: 'Domain .co.id', description: 'Domain komersial resmi Indonesia', price: 250000, sortOrder: 3 },
+        { extension: '.web.id', label: 'Domain .web.id', description: 'Domain murah untuk kebutuhan website secara general dan universal', price: 99000, sortOrder: 4 },
+        { extension: '.biz.id', label: 'Domain .biz.id', description: 'Domain bisnis ekstensi domain Indonesia yang terpercaya untuk UKM dan UMKM', price: 55000, sortOrder: 5 },
+        { extension: '.my.id', label: 'Domain .my.id', description: 'Domain personal dan portfolio, cocok untuk website personal atau pribadi', price: 30000, sortOrder: 6 },
+        { extension: '.com', label: 'Domain .com', description: 'Domain terpopuler', price: 199000, sortOrder: 1 },
+        { extension: '.net', label: 'Domain .net', description: 'Domain untuk website IT, networking, dan komputer', price: 250000, sortOrder: 7 },
+        { extension: '.org', label: 'Domain .org', description: 'Domain populer untuk kebutuhan yayasan, organisasi, forum dan perkumpulan', price: 215000, sortOrder: 8 },
+        { extension: '.xyz', label: 'Domain .xyz', description: 'Domain dengan registrasi sederhana toll yang cocok untuk semua kebutuhan website', price: 110000, sortOrder: 9 },
+        { extension: '.click', label: 'Domain .click', description: 'Domain unik yang cocok untuk meningkatkan kunjungan ke landing website', price: 150000, sortOrder: 10 },
+        { extension: '.co', label: 'Domain .co', description: 'Domain untuk kebutuhan website bisnis atau perusahaan', price: 350000, sortOrder: 11 },
+        { extension: '.biz', label: 'Domain .biz', description: 'Domain yang cocok untuk kebutuhan website bisnis Asia-Pasifik', price: 350000, sortOrder: 12 },
+        { extension: '.asia', label: 'Domain .asia', description: 'Domain untuk regional Asia-Pasifik', price: 199000, sortOrder: 13 },
+        { extension: '.site', label: 'Domain .site', description: 'Domain untuk bisnis, portfolio yang fleksibel dan profesional', price: 350000, sortOrder: 14 },
+        { extension: '.online', label: 'Domain .online', description: 'Cocok untuk hadirkan produk digital, toko, blog atau portofolio', price: 350000, sortOrder: 15 },
+        { extension: '.cc', label: 'Domain .cc', description: 'Fleksibel dan serbaguna, cocok untuk komunitas, perusahaan atau brand', price: 300000, sortOrder: 16 },
+        { extension: '.info', label: 'Domain .info', description: 'Cocol untuk situs informatif, panduan, atau sumber referensi online', price: 250000, sortOrder: 17 },
+        { extension: '.top', label: 'Domain .top', description: 'Menunjukkan keunggulan, ideal untuk startup, bisnis atau situs profesional', price: 120000, sortOrder: 18 },
+        { extension: '.pw', label: 'Domain .pw', description: 'Domain serbaguna, cocok untuk blog, startup atau website profesional', price: 115000, sortOrder: 19 },
+        { extension: '.cloud', label: 'Domain .cloud', description: 'Ideal untuk layanan berbasis awan, teknologi, atau situs digital', price: 130000, sortOrder: 20 },
+        { extension: '.io', label: 'Domain .io', description: 'Ideal untuk startup Samudera Hindia Britania', price: 899000, sortOrder: 21 },
+        { extension: '.space', label: 'Domain .space', description: 'Cocok untuk bisnis, komunitas dalam membangun ruang online yang unik', price: 250000, sortOrder: 22 },
+        { extension: '.website', label: 'Domain .website', description: 'Cocok untuk situs apa saja, orang yang ingin identitas website yang jelas dan mudah diingat', price: 350000, sortOrder: 23 },
+        { extension: '.store', label: 'Domain .store', description: 'Cocok untuk toko online, masalkan brand Anda lebih profesional dan mudah dikenali', price: 600000, sortOrder: 24 },
+        { extension: '.fun', label: 'Domain .fun', description: 'Domain untuk hiburan, komunitas, dan hobi', price: 250000, sortOrder: 25 },
+        { extension: '.se', label: 'Domain .se', description: 'Domain resmi Swedia, cocok untuk bisnis dan identitas digital', price: 200000, sortOrder: 26 },
+    ];
+
+    // Remove duplicate .com entry (first one wins)
+    const uniqueDomains = domainPrices.filter((d, i, arr) =>
+        arr.findIndex(x => x.extension === d.extension) === i
+    );
+
+    for (const dp of uniqueDomains) {
+        await prisma.domainPrice.upsert({
+            where: { extension: dp.extension },
+            update: { price: dp.price, label: dp.label, description: dp.description, sortOrder: dp.sortOrder },
+            create: dp,
+        });
+    }
+    console.log(`✅ ${uniqueDomains.length} domain prices seeded`);
+
     console.log('\n🎉 Seeding complete!');
 }
 

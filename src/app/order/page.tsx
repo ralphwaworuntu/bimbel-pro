@@ -15,6 +15,16 @@ interface Package {
     features: string[];
 }
 
+interface DomainPriceItem {
+    id: string;
+    extension: string;
+    label: string;
+    description: string;
+    price: number;
+    promoPrice: number | null;
+    promoActive: boolean;
+}
+
 function formatRp(n: number) {
     return new Intl.NumberFormat('id-ID').format(n);
 }
@@ -36,6 +46,14 @@ function OrderWizard() {
     const [loading, setLoading] = useState(false);
     const [orderResult, setOrderResult] = useState<any>(null);
 
+    // Domain check state
+    const [domainPrices, setDomainPrices] = useState<DomainPriceItem[]>([]);
+    const [domainName, setDomainName] = useState('');
+    const [selectedExt, setSelectedExt] = useState('.com');
+    const [domainCheckResult, setDomainCheckResult] = useState<{ available: boolean; message: string } | null>(null);
+    const [checkingDomain, setCheckingDomain] = useState(false);
+    const [domainMode, setDomainMode] = useState<'subdomain' | 'custom'>('subdomain');
+
     const [form, setForm] = useState({
         packageId: preselected || '',
         clientName: '',
@@ -50,6 +68,7 @@ function OrderWizard() {
 
     useEffect(() => {
         fetch('/api/packages').then(r => r.json()).then(setPackages).catch(() => { });
+        fetch('/api/domains').then(r => r.json()).then(setDomainPrices).catch(() => { });
     }, []);
 
     useEffect(() => {
@@ -57,6 +76,28 @@ function OrderWizard() {
     }, [preselected]);
 
     const selectedPkg = packages.find(p => p.id === form.packageId);
+    const selectedDomainPrice = domainPrices.find(d => d.extension === selectedExt);
+    const domainDisplayPrice = selectedDomainPrice
+        ? (selectedDomainPrice.promoActive && selectedDomainPrice.promoPrice != null ? selectedDomainPrice.promoPrice : selectedDomainPrice.price)
+        : 0;
+
+    const checkDomain = async () => {
+        if (!domainName.trim()) return;
+        setCheckingDomain(true);
+        setDomainCheckResult(null);
+        const fullDomain = `${domainName.trim()}${selectedExt}`;
+        try {
+            const res = await fetch(`/api/domains/check?domain=${encodeURIComponent(fullDomain)}`);
+            const data = await res.json();
+            setDomainCheckResult({ available: data.available, message: data.message });
+            if (data.available) {
+                setForm(f => ({ ...f, domainRequested: fullDomain }));
+            }
+        } catch {
+            setDomainCheckResult({ available: false, message: 'Gagal memeriksa domain. Coba lagi.' });
+        }
+        setCheckingDomain(false);
+    };
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -170,24 +211,144 @@ function OrderWizard() {
                     <>
                         <h2 className="wizard-title">Pilih Domain</h2>
                         <p className="wizard-subtitle">Tentukan alamat website bimbel Anda</p>
-                        <div className="form-group">
-                            <label className="form-label">Subdomain Gratis</label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <input className="form-input" placeholder="namabimbel" value={form.subdomainRequested}
-                                    onChange={e => setForm({ ...form, subdomainRequested: e.target.value })}
-                                    style={{ flex: 1 }} />
-                                <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>.bimbelpro.com</span>
+
+                        {/* Domain mode toggle */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                            <button
+                                className={`btn ${domainMode === 'subdomain' ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => { setDomainMode('subdomain'); setDomainCheckResult(null); }}
+                                style={{ flex: 1 }}
+                            >
+                                🆓 Subdomain Gratis
+                            </button>
+                            <button
+                                className={`btn ${domainMode === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => { setDomainMode('custom'); setDomainCheckResult(null); }}
+                                style={{ flex: 1 }}
+                            >
+                                🌐 Custom Domain
+                            </button>
+                        </div>
+
+                        {/* Subdomain Mode */}
+                        {domainMode === 'subdomain' && (
+                            <div className="form-group">
+                                <label className="form-label">Subdomain Gratis</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input className="form-input" placeholder="namabimbel" value={form.subdomainRequested}
+                                        onChange={e => setForm({ ...form, subdomainRequested: e.target.value, domainRequested: '' })}
+                                        style={{ flex: 1 }} />
+                                    <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontWeight: 600 }}>.bimbelpro.com</span>
+                                </div>
+                                <small style={{ color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
+                                    ✅ Gratis selamanya, langsung aktif setelah pembayaran.
+                                </small>
                             </div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>atau</div>
-                        <div className="form-group">
-                            <label className="form-label">Custom Domain (Opsional)</label>
-                            <input className="form-input" placeholder="www.domainanda.com" value={form.domainRequested}
-                                onChange={e => setForm({ ...form, domainRequested: e.target.value })} />
-                            <small style={{ color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
-                                Tersedia untuk paket Pro dan Premium. Biaya domain ditanggung klien.
-                            </small>
-                        </div>
+                        )}
+
+                        {/* Custom Domain Mode */}
+                        {domainMode === 'custom' && (
+                            <>
+                                <div className="form-group">
+                                    <label className="form-label">Cek Ketersediaan Domain</label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            className="form-input"
+                                            placeholder="namadomain"
+                                            value={domainName}
+                                            onChange={e => { setDomainName(e.target.value); setDomainCheckResult(null); }}
+                                            onKeyDown={e => e.key === 'Enter' && checkDomain()}
+                                            style={{ flex: 1 }}
+                                        />
+                                        <select
+                                            className="form-input"
+                                            value={selectedExt}
+                                            onChange={e => { setSelectedExt(e.target.value); setDomainCheckResult(null); }}
+                                            style={{ width: '140px', flexShrink: 0 }}
+                                        >
+                                            {domainPrices.map(dp => (
+                                                <option key={dp.extension} value={dp.extension}>
+                                                    {dp.extension}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={checkDomain}
+                                            disabled={checkingDomain || !domainName.trim()}
+                                            style={{ whiteSpace: 'nowrap' }}
+                                        >
+                                            {checkingDomain ? '⏳' : '🔍 Cek'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Domain Check Result */}
+                                {domainCheckResult && (
+                                    <div
+                                        className="animate-fadeIn"
+                                        style={{
+                                            padding: '16px 20px',
+                                            borderRadius: 'var(--radius-md)',
+                                            marginBottom: '20px',
+                                            border: `2px solid ${domainCheckResult.available ? 'var(--success)' : 'var(--danger)'}`,
+                                            background: domainCheckResult.available ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '1.3rem' }}>{domainCheckResult.available ? '✅' : '❌'}</span>
+                                            <div>
+                                                <div style={{ fontWeight: 700 }}>
+                                                    {domainName}{selectedExt}
+                                                </div>
+                                                <div style={{ fontSize: '0.9rem', color: domainCheckResult.available ? 'var(--success)' : 'var(--danger)' }}>
+                                                    {domainCheckResult.message}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Domain Price Display */}
+                                {selectedDomainPrice && (
+                                    <div style={{
+                                        background: 'var(--bg-input)',
+                                        padding: '20px',
+                                        borderRadius: 'var(--radius-md)',
+                                        marginBottom: '16px',
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, marginBottom: '4px' }}>{selectedDomainPrice.label}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{selectedDomainPrice.description}</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                {selectedDomainPrice.promoActive && selectedDomainPrice.promoPrice != null ? (
+                                                    <>
+                                                        <div style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                            Rp {formatRp(selectedDomainPrice.price)}
+                                                        </div>
+                                                        <div style={{ fontWeight: 800, color: 'var(--success)', fontSize: '1.2rem' }}>
+                                                            Rp {formatRp(selectedDomainPrice.promoPrice)}
+                                                        </div>
+                                                        <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>PROMO</span>
+                                                    </>
+                                                ) : (
+                                                    <div style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '1.2rem' }}>
+                                                        Rp {formatRp(selectedDomainPrice.price)}
+                                                    </div>
+                                                )}
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/tahun</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <small style={{ color: 'var(--text-muted)', display: 'block' }}>
+                                    💡 Tersedia untuk paket Pro dan Premium. Biaya domain per tahun ditanggung klien.
+                                </small>
+                            </>
+                        )}
                     </>
                 )}
 
@@ -203,10 +364,16 @@ function OrderWizard() {
                                     <span style={{ color: 'var(--text-secondary)' }}>Paket</span>
                                     <span style={{ fontWeight: 700 }}>{selectedPkg.name}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Harga</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: form.domainRequested ? '8px' : '0' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Harga Paket</span>
                                     <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(selectedPkg.price)}</span>
                                 </div>
+                                {form.domainRequested && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Domain ({form.domainRequested})</span>
+                                        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(domainDisplayPrice)}/tahun</span>
+                                    </div>
+                                )}
                             </div>
                         )}
 
