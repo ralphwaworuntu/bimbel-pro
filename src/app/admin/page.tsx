@@ -41,22 +41,37 @@ function getGreeting() {
     return 'Selamat Malam';
 }
 
+function Skeleton({ width, height, style }: { width?: string; height?: string; style?: React.CSSProperties }) {
+    return (
+        <div
+            className="skeleton-loader"
+            style={{ width: width || '100%', height: height || '20px', ...style }}
+        ></div>
+    );
+}
+
 export default function AdminDashboard() {
     const { data: session } = useSession();
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<any>({});
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>({});
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        // Fetch data immediately but don't block UI
         fetch('/api/dashboard')
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error('Gagal memuat data');
+                return res.json();
+            })
             .then((data) => {
-                setStats(data.stats);
-                setData(data); // Store full data
+                setStats(data.stats || {});
+                setData(data);
                 setLoading(false);
             })
             .catch((err) => {
                 console.error(err);
+                setError('Gagal memuat data dashboard. Silakan refresh.');
                 setLoading(false);
             });
     }, []);
@@ -103,14 +118,8 @@ export default function AdminDashboard() {
         height: '100%',
     };
 
-    if (loading) {
-        return (
-            <div className="dashboard-loading">
-                <div className="spinner"></div>
-                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Memuat dashboard...</p>
-            </div>
-        );
-    }
+    // Replace strict loading screen with just an overlay or partial loading
+    // We now Render the dashboard structure immediately
 
     return (
         <div className="dashboard-container">
@@ -124,6 +133,12 @@ export default function AdminDashboard() {
                     {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </div>
+
+            {error && (
+                <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                    ⚠️ {error}
+                </div>
+            )}
 
             {/* QUICK ACTIONS */}
             <div className="quick-actions animate-fadeInUp stagger-1">
@@ -148,10 +163,10 @@ export default function AdminDashboard() {
                     <div>
                         <div className="stat-label">Total Order</div>
                         <div className="stat-value">
-                            <StatsCounter end={stats?.totalOrders || 0} />
+                            {loading ? <Skeleton width="60px" height="32px" /> : <StatsCounter end={stats?.totalOrders || 0} />}
                         </div>
                         <div className="stat-desc">
-                            <span className="text-success">+{stats?.ordersThisMonth || 0}</span> bulan ini
+                            {loading ? <Skeleton width="80px" height="14px" /> : <><span className="text-success">+{stats?.ordersThisMonth || 0}</span> bulan ini</>}
                         </div>
                     </div>
                 </div>
@@ -161,7 +176,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="stat-label">Pendapatan</div>
                         <div className="stat-value text-accent">
-                            Rp <StatsCounter end={stats?.totalRevenue || 0} />
+                            {loading ? <Skeleton width="100px" height="32px" /> : <>Rp <StatsCounter end={stats?.totalRevenue || 0} /></>}
                         </div>
                         <div className="stat-desc">Total revenue masuk</div>
                     </div>
@@ -172,10 +187,10 @@ export default function AdminDashboard() {
                     <div>
                         <div className="stat-label">Website Aktif</div>
                         <div className="stat-value">
-                            <StatsCounter end={stats?.activeTenants || 0} />
+                            {loading ? <Skeleton width="60px" height="32px" /> : <StatsCounter end={stats?.activeTenants || 0} />}
                         </div>
                         <div className="stat-desc">
-                            {stats?.totalTenants || 0} total tenant terdaftar
+                            {loading ? <Skeleton width="120px" height="14px" /> : <>{stats?.totalTenants || 0} total tenant terdaftar</>}
                         </div>
                     </div>
                 </div>
@@ -185,7 +200,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="stat-label">Pending Order</div>
                         <div className="stat-value text-warning">
-                            <StatsCounter end={stats?.pendingOrders || 0} />
+                            {loading ? <Skeleton width="40px" height="32px" /> : <StatsCounter end={stats?.pendingOrders || 0} />}
                         </div>
                         <div className="stat-desc">Perlu diproses segera</div>
                     </div>
@@ -202,13 +217,23 @@ export default function AdminDashboard() {
                             <option>30 Hari Terakhir</option>
                         </select>
                     </div>
-                    <div style={{ flex: 1, minHeight: '250px' }}>
+                    <div style={{ flex: 1, minHeight: '250px', position: 'relative' }}>
+                        {loading && (
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.5)', zIndex: 10 }}>
+                                <div className="spinner"></div>
+                            </div>
+                        )}
                         <Line data={lineChartData} options={{ maintainAspectRatio: false, responsive: true, plugins: { legend: { display: false } } }} />
                     </div>
                 </div>
                 <div className="chart-card animate-fadeInUp stagger-4" style={cardStyle}>
                     <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>Paket Terlaris</h3>
-                    <div style={{ flex: 1, minHeight: '250px' }}>
+                    <div style={{ flex: 1, minHeight: '250px', position: 'relative' }}>
+                        {loading && (
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.5)', zIndex: 10 }}>
+                                <div className="spinner"></div>
+                            </div>
+                        )}
                         <Bar data={barChartData} options={{ maintainAspectRatio: false, responsive: true }} />
                     </div>
                 </div>
@@ -233,24 +258,33 @@ export default function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.recentOrders?.map((order: any) => (
-                                    <tr key={order.id} className="hover-row">
-                                        <td style={{ fontFamily: 'monospace' }}>{order.orderNumber}</td>
-                                        <td>{order.clientName}</td>
-                                        <td>{order.package?.name}</td>
-                                        <td>
-                                            <span className={`badge ${order.status === 'active' ? 'badge-success' :
-                                                order.status === 'processing' ? 'badge-info' :
-                                                    order.status === 'pending' ? 'badge-warning' : 'badge-danger'
-                                                }`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td>Rp {formatRp(order.package?.price || 0)}</td>
-                                    </tr>
-                                )) || (
-                                        <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada data order.</td></tr>
-                                    )}
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i}>
+                                            <td colSpan={5}><Skeleton height="24px" /></td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    data.recentOrders?.map((order: any) => (
+                                        <tr key={order.id} className="hover-row">
+                                            <td style={{ fontFamily: 'monospace' }}>{order.orderNumber}</td>
+                                            <td>{order.clientName}</td>
+                                            <td>{order.package?.name}</td>
+                                            <td>
+                                                <span className={`badge ${order.status === 'active' ? 'badge-success' :
+                                                    order.status === 'processing' ? 'badge-info' :
+                                                        order.status === 'pending' ? 'badge-warning' : 'badge-danger'
+                                                    }`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td>Rp {formatRp(order.package?.price || 0)}</td>
+                                        </tr>
+                                    ))
+                                )}
+                                {!loading && (!data.recentOrders || data.recentOrders.length === 0) && (
+                                    <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada data order.</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -279,6 +313,18 @@ export default function AdminDashboard() {
             </div>
 
             <style jsx>{`
+                .skeleton-loader {
+                    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border) 50%, var(--bg-secondary) 75%);
+                    background-size: 200% 100%;
+                    animation: skeleton-loading 1.5s infinite;
+                    border-radius: 4px;
+                }
+
+                @keyframes skeleton-loading {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+
                 .dashboard-container {
                     display: flex;
                     flex-direction: column;
@@ -331,7 +377,7 @@ export default function AdminDashboard() {
 
                 .stats-grid {
                     display: grid;
-                    grid-template-columns: repeat(4, 1fr);
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
                     gap: 24px;
                 }
 
