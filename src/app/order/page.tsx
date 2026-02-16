@@ -93,9 +93,7 @@ function OrderWizardContent() {
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
     const [orderResult, setOrderResult] = useState<any>(null);
-<<<<<<< HEAD
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-=======
 
     // Domain check state
     const [domainPrices, setDomainPrices] = useState<DomainPriceItem[]>([]);
@@ -104,19 +102,6 @@ function OrderWizardContent() {
     const [domainCheckResult, setDomainCheckResult] = useState<{ available: boolean; message: string } | null>(null);
     const [checkingDomain, setCheckingDomain] = useState(false);
     const [domainMode, setDomainMode] = useState<'subdomain' | 'custom'>('subdomain');
-
-    const [form, setForm] = useState({
-        packageId: preselected || '',
-        clientName: '',
-        brandName: '',
-        email: '',
-        phone: '',
-        address: '',
-        domainRequested: '',
-        subdomainRequested: '',
-        paymentType: 'full',
-    });
->>>>>>> 7959386 (feat: add domain pricing, promo management, and WhoisXMLAPI availability check)
 
     useEffect(() => {
         setIsClient(true);
@@ -373,264 +358,146 @@ function OrderWizardContent() {
                             <h2 className="wizard-title text-center">Pilih Domain</h2>
                             <p className="wizard-subtitle text-center">Tentukan alamat website bimbel Anda</p>
 
-                            <div className={`card slide-in ${form.subdomainRequested ? 'border-accent' : ''}`}
-                                onClick={() => setForm({ ...form, subdomainRequested: form.subdomainRequested || 'namabimbel', domainRequested: '' })}
-                                style={{ cursor: 'pointer', marginBottom: '24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                    <div className={`radio-circle ${form.subdomainRequested ? 'checked' : ''}`}></div>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Subdomain Gratis</h3>
-                                </div>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <input
-                                            className="form-input"
-                                            placeholder="namabimbel"
-                                            value={form.subdomainRequested}
-                                            onChange={e => setForm({ ...form, subdomainRequested: e.target.value, domainRequested: '' })}
-                                            onClick={e => e.stopPropagation()}
-                                            style={{ flex: 1 }}
-                                        />
-                                        <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontWeight: 600 }}>.bimbelpro.com</span>
+                            {/* Domain mode toggle */}
+                            <div className="slide-in" style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                                <button
+                                    className={`btn ${domainMode === 'subdomain' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => { setDomainMode('subdomain'); setDomainCheckResult(null); }}
+                                    style={{ flex: 1 }}
+                                >
+                                    🆓 Subdomain Gratis
+                                </button>
+                                <button
+                                    className={`btn ${domainMode === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => { setDomainMode('custom'); setDomainCheckResult(null); }}
+                                    style={{ flex: 1 }}
+                                >
+                                    🌐 Custom Domain
+                                </button>
+                            </div>
+
+                            {/* Subdomain Mode */}
+                            {domainMode === 'subdomain' && (
+                                <div className="card slide-in" style={{ animationDelay: '0.1s' }}>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label className="form-label">Subdomain Gratis</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <input className="form-input" placeholder="namabimbel" value={form.subdomainRequested}
+                                                onChange={e => setForm({ ...form, subdomainRequested: e.target.value, domainRequested: '' })}
+                                                style={{ flex: 1 }} />
+                                            <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontWeight: 600 }}>.bimbelpro.com</span>
+                                        </div>
+                                        <small style={{ color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
+                                            ✅ Gratis selamanya, langsung aktif setelah pembayaran.
+                                        </small>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
-                            <div className={`card slide-in ${form.domainRequested ? 'border-accent' : ''}`}
-                                style={{ cursor: 'pointer', animationDelay: '0.1s' }}
-                                onClick={() => setForm({ ...form, domainRequested: form.domainRequested || 'www.namabimbel.com', subdomainRequested: '' })}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                    <div className={`radio-circle ${form.domainRequested ? 'checked' : ''}`}></div>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Custom Domain + Rp 150rb</h3>
-                                </div>
-<<<<<<< HEAD
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <input
-                                        className="form-input"
-                                        placeholder="www.namabimbel.com"
-                                        value={form.domainRequested}
-                                        onChange={e => setForm({ ...form, domainRequested: e.target.value, subdomainRequested: '' })}
-                                        onClick={e => e.stopPropagation()}
-                                    />
-                                    <small style={{ color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
-                                        Kami akan membantu proses pembelian dan setup domain untuk Anda.
-                                    </small>
-=======
-                                <p className="package-option-desc">{pkg.description}</p>
-                            </div>
-                        ))}
-                    </>
-                )}
-
-                {/* Step 2: Data Bisnis */}
-                {step === 2 && (
-                    <>
-                        <h2 className="wizard-title">Data Bisnis Anda</h2>
-                        <p className="wizard-subtitle">Isi data pemilik dan brand bimbel Anda</p>
-                        <div className="form-group">
-                            <label className="form-label">Nama Pemilik *</label>
-                            <input className="form-input" placeholder="Nama lengkap Anda" value={form.clientName}
-                                onChange={e => setForm({ ...form, clientName: e.target.value })} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Nama Brand Bimbel *</label>
-                            <input className="form-input" placeholder='Contoh: "Bimbel Garuda Jaya"' value={form.brandName}
-                                onChange={e => setForm({ ...form, brandName: e.target.value })} />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div className="form-group">
-                                <label className="form-label">Email *</label>
-                                <input className="form-input" type="email" placeholder="email@example.com" value={form.email}
-                                    onChange={e => setForm({ ...form, email: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">WhatsApp *</label>
-                                <input className="form-input" placeholder="08xxxxxxxxxx" value={form.phone}
-                                    onChange={e => setForm({ ...form, phone: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Alamat</label>
-                            <textarea className="form-textarea" placeholder="Alamat bisnis bimbel Anda" value={form.address}
-                                onChange={e => setForm({ ...form, address: e.target.value })} style={{ minHeight: '80px' }} />
-                        </div>
-                    </>
-                )}
-
-                {/* Step 3: Domain */}
-                {step === 3 && (
-                    <>
-                        <h2 className="wizard-title">Pilih Domain</h2>
-                        <p className="wizard-subtitle">Tentukan alamat website bimbel Anda</p>
-
-                        {/* Domain mode toggle */}
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-                            <button
-                                className={`btn ${domainMode === 'subdomain' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => { setDomainMode('subdomain'); setDomainCheckResult(null); }}
-                                style={{ flex: 1 }}
-                            >
-                                🆓 Subdomain Gratis
-                            </button>
-                            <button
-                                className={`btn ${domainMode === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => { setDomainMode('custom'); setDomainCheckResult(null); }}
-                                style={{ flex: 1 }}
-                            >
-                                🌐 Custom Domain
-                            </button>
-                        </div>
-
-                        {/* Subdomain Mode */}
-                        {domainMode === 'subdomain' && (
-                            <div className="form-group">
-                                <label className="form-label">Subdomain Gratis</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input className="form-input" placeholder="namabimbel" value={form.subdomainRequested}
-                                        onChange={e => setForm({ ...form, subdomainRequested: e.target.value, domainRequested: '' })}
-                                        style={{ flex: 1 }} />
-                                    <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontWeight: 600 }}>.bimbelpro.com</span>
-                                </div>
-                                <small style={{ color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
-                                    ✅ Gratis selamanya, langsung aktif setelah pembayaran.
-                                </small>
-                            </div>
-                        )}
-
-                        {/* Custom Domain Mode */}
-                        {domainMode === 'custom' && (
-                            <>
-                                <div className="form-group">
-                                    <label className="form-label">Cek Ketersediaan Domain</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input
-                                            className="form-input"
-                                            placeholder="namadomain"
-                                            value={domainName}
-                                            onChange={e => { setDomainName(e.target.value); setDomainCheckResult(null); }}
-                                            onKeyDown={e => e.key === 'Enter' && checkDomain()}
-                                            style={{ flex: 1 }}
-                                        />
-                                        <select
-                                            className="form-input"
-                                            value={selectedExt}
-                                            onChange={e => { setSelectedExt(e.target.value); setDomainCheckResult(null); }}
-                                            style={{ width: '140px', flexShrink: 0 }}
-                                        >
-                                            {domainPrices.map(dp => (
-                                                <option key={dp.extension} value={dp.extension}>
-                                                    {dp.extension}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            className="btn btn-primary"
-                                            onClick={checkDomain}
-                                            disabled={checkingDomain || !domainName.trim()}
-                                            style={{ whiteSpace: 'nowrap' }}
-                                        >
-                                            {checkingDomain ? '⏳' : '🔍 Cek'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Domain Check Result */}
-                                {domainCheckResult && (
-                                    <div
-                                        className="animate-fadeIn"
-                                        style={{
-                                            padding: '16px 20px',
-                                            borderRadius: 'var(--radius-md)',
-                                            marginBottom: '20px',
-                                            border: `2px solid ${domainCheckResult.available ? 'var(--success)' : 'var(--danger)'}`,
-                                            background: domainCheckResult.available ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ fontSize: '1.3rem' }}>{domainCheckResult.available ? '✅' : '❌'}</span>
-                                            <div>
-                                                <div style={{ fontWeight: 700 }}>
-                                                    {domainName}{selectedExt}
-                                                </div>
-                                                <div style={{ fontSize: '0.9rem', color: domainCheckResult.available ? 'var(--success)' : 'var(--danger)' }}>
-                                                    {domainCheckResult.message}
-                                                </div>
+                            {/* Custom Domain Mode */}
+                            {domainMode === 'custom' && (
+                                <>
+                                    <div className="card slide-in" style={{ animationDelay: '0.1s' }}>
+                                        <div className="form-group">
+                                            <label className="form-label">Cek Ketersediaan Domain</label>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    className="form-input"
+                                                    placeholder="namadomain"
+                                                    value={domainName}
+                                                    onChange={e => { setDomainName(e.target.value); setDomainCheckResult(null); }}
+                                                    onKeyDown={e => e.key === 'Enter' && checkDomain()}
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <select
+                                                    className="form-input"
+                                                    value={selectedExt}
+                                                    onChange={e => { setSelectedExt(e.target.value); setDomainCheckResult(null); }}
+                                                    style={{ width: '140px', flexShrink: 0 }}
+                                                >
+                                                    {domainPrices.map((dp: DomainPriceItem) => (
+                                                        <option key={dp.extension} value={dp.extension}>
+                                                            {dp.extension}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={checkDomain}
+                                                    disabled={checkingDomain || !domainName.trim()}
+                                                    style={{ whiteSpace: 'nowrap' }}
+                                                >
+                                                    {checkingDomain ? '⏳' : '🔍 Cek'}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
-                                )}
 
-                                {/* Domain Price Display */}
-                                {selectedDomainPrice && (
-                                    <div style={{
-                                        background: 'var(--bg-input)',
-                                        padding: '20px',
-                                        borderRadius: 'var(--radius-md)',
-                                        marginBottom: '16px',
-                                    }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <div style={{ fontWeight: 700, marginBottom: '4px' }}>{selectedDomainPrice.label}</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{selectedDomainPrice.description}</div>
+                                    {/* Domain Check Result */}
+                                    {domainCheckResult && (
+                                        <div
+                                            className="animate-fadeIn slide-in"
+                                            style={{
+                                                padding: '16px 20px',
+                                                borderRadius: 'var(--radius-md)',
+                                                marginBottom: '20px',
+                                                border: `2px solid ${domainCheckResult.available ? 'var(--success)' : 'var(--danger)'}`,
+                                                background: domainCheckResult.available ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontSize: '1.3rem' }}>{domainCheckResult.available ? '✅' : '❌'}</span>
+                                                <div>
+                                                    <div style={{ fontWeight: 700 }}>
+                                                        {domainName}{selectedExt}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.9rem', color: domainCheckResult.available ? 'var(--success)' : 'var(--danger)' }}>
+                                                        {domainCheckResult.message}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                {selectedDomainPrice.promoActive && selectedDomainPrice.promoPrice != null ? (
-                                                    <>
-                                                        <div style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        </div>
+                                    )}
+
+                                    {/* Domain Price Display */}
+                                    {selectedDomainPrice && (
+                                        <div className="card slide-in" style={{ animationDelay: '0.2s' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>{selectedDomainPrice.label}</div>
+                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{selectedDomainPrice.description}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    {selectedDomainPrice.promoActive && selectedDomainPrice.promoPrice != null ? (
+                                                        <>
+                                                            <div style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                                Rp {formatRp(selectedDomainPrice.price)}
+                                                            </div>
+                                                            <div style={{ fontWeight: 800, color: 'var(--success)', fontSize: '1.2rem' }}>
+                                                                Rp {formatRp(selectedDomainPrice.promoPrice)}
+                                                            </div>
+                                                            <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>PROMO</span>
+                                                        </>
+                                                    ) : (
+                                                        <div style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '1.2rem' }}>
                                                             Rp {formatRp(selectedDomainPrice.price)}
                                                         </div>
-                                                        <div style={{ fontWeight: 800, color: 'var(--success)', fontSize: '1.2rem' }}>
-                                                            Rp {formatRp(selectedDomainPrice.promoPrice)}
-                                                        </div>
-                                                        <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>PROMO</span>
-                                                    </>
-                                                ) : (
-                                                    <div style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '1.2rem' }}>
-                                                        Rp {formatRp(selectedDomainPrice.price)}
-                                                    </div>
-                                                )}
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/tahun</div>
+                                                    )}
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/tahun</div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                <small style={{ color: 'var(--text-muted)', display: 'block' }}>
-                                    💡 Tersedia untuk paket Pro dan Premium. Biaya domain per tahun ditanggung klien.
-                                </small>
-                            </>
-                        )}
-                    </>
-                )}
-
-                {/* Step 4: Pembayaran */}
-                {step === 4 && (
-                    <>
-                        <h2 className="wizard-title">Metode Pembayaran</h2>
-                        <p className="wizard-subtitle">Pilih skema pembayaran yang Anda inginkan</p>
-
-                        {selectedPkg && (
-                            <div style={{ background: 'var(--bg-input)', padding: '20px', borderRadius: 'var(--radius-md)', marginBottom: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Paket</span>
-                                    <span style={{ fontWeight: 700 }}>{selectedPkg.name}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: form.domainRequested ? '8px' : '0' }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Harga Paket</span>
-                                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(selectedPkg.price)}</span>
->>>>>>> 7959386 (feat: add domain pricing, promo management, and WhoisXMLAPI availability check)
-                                </div>
-                                {form.domainRequested && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
-                                        <span style={{ color: 'var(--text-secondary)' }}>Domain ({form.domainRequested})</span>
-                                        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Rp {formatRp(domainDisplayPrice)}/tahun</span>
-                                    </div>
-                                )}
-                            </div>
+                                    <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '12px' }}>
+                                        💡 Tersedia untuk paket Pro dan Premium. Biaya domain per tahun ditanggung klien.
+                                    </small>
+                                </>
+                            )}
                         </>
                     )}
 
-                    {/* Step 4: Review */}
+                    {/* Step 4: Review & Pembayaran */}
                     {step === 4 && (
                         <>
                             <h2 className="wizard-title text-center">Review & Pembayaran</h2>
@@ -648,7 +515,11 @@ function OrderWizardContent() {
                                     </div>
                                     <div>
                                         <small className="text-muted block mb-1">Domain</small>
-                                        <div className="font-bold">{form.subdomainRequested ? `${form.subdomainRequested}.bimbelpro.com` : form.domainRequested}</div>
+                                        <div className="font-bold">
+                                            {form.subdomainRequested
+                                                ? `${form.subdomainRequested}.bimbelpro.com`
+                                                : form.domainRequested || `${domainName}${selectedExt}`}
+                                        </div>
                                     </div>
                                     <div>
                                         <small className="text-muted block mb-1">Billing</small>
@@ -657,9 +528,23 @@ function OrderWizardContent() {
                                     </div>
                                     <div>
                                         <small className="text-muted block mb-1">Total</small>
-                                        <div className="font-bold text-accent" style={{ fontSize: '1.2rem' }}>Rp {formatRp(selectedPkg?.price || 0)}</div>
+                                        <div className="font-bold text-accent" style={{ fontSize: '1.2rem' }}>
+                                            Rp {formatRp((selectedPkg?.price || 0) + (domainMode === 'custom' ? domainDisplayPrice : 0))}
+                                        </div>
                                     </div>
                                 </div>
+                                {domainMode === 'custom' && selectedDomainPrice && (
+                                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Harga Paket</span>
+                                            <span className="font-bold">Rp {formatRp(selectedPkg?.price || 0)}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Domain ({domainName}{selectedExt})</span>
+                                            <span className="font-bold" style={{ color: 'var(--accent)' }}>Rp {formatRp(domainDisplayPrice)}/tahun</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <h3 className="slide-in" style={{ fontSize: '1.1rem', marginBottom: '16px', animationDelay: '0.1s' }}>Pilih Metode Pembayaran</h3>
@@ -674,7 +559,9 @@ function OrderWizardContent() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ fontWeight: 700 }}>Pembayaran Penuh</div>
                                         {selectedPkg && (
-                                            <span style={{ fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>Rp {formatRp(selectedPkg.price)}</span>
+                                            <span style={{ fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                                                Rp {formatRp(selectedPkg.price + (domainMode === 'custom' ? domainDisplayPrice : 0))}
+                                            </span>
                                         )}
                                     </div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Bayar lunas sekarang dan dapatkan prioritas pengerjaan</div>
@@ -691,7 +578,9 @@ function OrderWizardContent() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ fontWeight: 700 }}>Down Payment (50%)</div>
                                         {selectedPkg && (
-                                            <span style={{ fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>Rp {formatRp(Math.floor(selectedPkg.price * 0.5))}</span>
+                                            <span style={{ fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                                                Rp {formatRp(Math.floor((selectedPkg.price + (domainMode === 'custom' ? domainDisplayPrice : 0)) * 0.5))}
+                                            </span>
                                         )}
                                     </div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Bayar DP dulu, sisanya setelah website selesai</div>
