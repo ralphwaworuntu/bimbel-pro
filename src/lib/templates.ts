@@ -5,7 +5,8 @@ interface EmailTemplateData {
         appLogo: string;
         companyName: string;
         address: string;
-        contact: string;
+        contactEmail?: string;
+        contactPhone?: string;
     };
     order?: any;
     payment?: any;
@@ -107,7 +108,7 @@ export function getInvoiceHtml(data: EmailTemplateData) {
             <div class="footer">
                 <p style="margin:0"><strong>${appConfig.companyName}</strong></p>
                 <p style="margin:5px 0">${appConfig.address}</p>
-                <p style="margin:5px 0">${appConfig.contact}</p>
+                <p style="margin:5px 0">${appConfig.contactEmail || ''} ${appConfig.contactPhone ? '| ' + appConfig.contactPhone : ''}</p>
                 <p style="margin-top:15px">&copy; ${new Date().getFullYear()} ${appConfig.appName}. All rights reserved.</p>
             </div>
         </div>

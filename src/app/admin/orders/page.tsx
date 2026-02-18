@@ -130,7 +130,7 @@ export default function AdminOrdersPage() {
                                         <td>{order.clientName}</td>
                                         <td>
                                             <span className={`badge ${order.package?.name === 'Premium' ? 'badge-warning' :
-                                                    order.package?.name === 'Pro' ? 'badge-info' : 'badge-secondary'
+                                                order.package?.name === 'Pro' ? 'badge-info' : 'badge-secondary'
                                                 }`}>
                                                 {order.package?.name || 'Custom'}
                                             </span>
@@ -138,14 +138,14 @@ export default function AdminOrdersPage() {
                                         <td>Rp {formatRp(order.package?.price || 0)}</td>
                                         <td>
                                             <span className={`badge ${order.status === 'active' ? 'badge-success' :
-                                                    order.status === 'processing' ? 'badge-info' :
-                                                        order.status === 'pending' ? 'badge-warning' : 'badge-danger'
+                                                order.status === 'processing' ? 'badge-info' :
+                                                    order.status === 'pending' ? 'badge-warning' : 'badge-danger'
                                                 }`}>
                                                 {order.status}
                                             </span>
                                         </td>
                                         <td>
-                                            <button className="btn btn-secondary btn-sm">Detail</button>
+                                            <Link href={`/admin/orders/${order.id}`} className="btn btn-secondary btn-sm">Detail</Link>
                                         </td>
                                     </tr>
                                 ))

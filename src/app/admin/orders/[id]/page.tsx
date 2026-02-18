@@ -121,6 +121,15 @@ export default function AdminOrderDetailPage() {
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                     {p.gatewayName} • {p.method || 'n/a'} • {p.gatewayRef?.slice(0, 20)}
                                 </div>
+                                {p.proofFile && (
+                                    <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Bukti Pembayaran:</p>
+                                        <a href={p.proofFile} target="_blank" rel="noopener noreferrer" style={{ display: 'block', maxWidth: '200px' }}>
+                                            <img src={p.proofFile} alt="Bukti Transfer" style={{ width: '100%', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                                            <span style={{ fontSize: '0.8rem', display: 'block', marginTop: '4px', textDecoration: 'underline' }}>Lihat Ukuran Penuh</span>
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         )) : (
                             <p style={{ color: 'var(--text-muted)' }}>Belum ada pembayaran</p>

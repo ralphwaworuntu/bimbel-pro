@@ -99,12 +99,21 @@ export default function Navbar() {
                     </li>
 
                     <li>
+                        <Link
+                            href="/konfirmasi"
+                            className={isActive('/konfirmasi') ? 'active' : ''}
+                            onClick={() => setMenuOpen(false)}
+                        >
+                            Konfirmasi Pembayaran
+                        </Link>
+                    </li>
+                    <li>
                         <ThemeToggle />
                     </li>
                     <li>
                         <Link
                             href="/order"
-                            className="btn btn-primary btn-sm"
+                            className="btn btn-primary btn-sm text-white hover:text-white"
                             onClick={() => setMenuOpen(false)}
                         >
                             Pesan Sekarang

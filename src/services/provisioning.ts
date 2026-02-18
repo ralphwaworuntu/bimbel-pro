@@ -75,7 +75,8 @@ export async function provisionTenant(orderId: string) {
             appLogo: '',
             companyName: 'PT Bimbel Pro',
             address: '',
-            contact: ''
+            contactEmail: '',
+            contactPhone: ''
         };
 
         const adminUrl = `https://${tenant.subdomain}.bimbelpro.com/admin`; // Mock URL scheme

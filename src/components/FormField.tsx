@@ -1,12 +1,18 @@
 import React, { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
-interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+// Union type for input and textarea props
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+
+interface FormFieldProps extends Omit<InputProps, 'onChange'> {
     label: string;
     error?: string;
     touched?: boolean;
     as?: 'input' | 'textarea';
     rows?: number;
     className?: string;
+    // Allow onChange to handle both event types
+    onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
 const FormField: React.FC<FormFieldProps> = ({

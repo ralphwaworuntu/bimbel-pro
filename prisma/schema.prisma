@@ -64,6 +64,7 @@ model Payment {
   gatewayRef  String    @default("")
   gatewayName String    @default("")   // midtrans | xendit | sandbox
   paymentUrl  String    @default("")
+  proofFile   String    @default("")   // Path to uploaded proof file
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -117,4 +118,29 @@ model DomainPrice {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AppConfig {
+  id           String   @id @default(uuid())
+  appName      String   @default("Bimbel Pro")
+  appLogo      String   @default("/images/logo.png")
+  companyName  String   @default("")
+  address      String   @default("")
+  contactEmail String   @default("")
+  contactPhone String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model EmailConfig {
+  id        String   @id @default(uuid())
+  host      String
+  port      Int
+  secure    Boolean  @default(false)
+  user      String
+  password  String
+  fromName  String
+  fromEmail String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
