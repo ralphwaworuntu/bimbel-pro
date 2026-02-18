@@ -7,26 +7,36 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
 
     const [
         totalOrders,
         ordersThisMonth,
+        ordersLastMonth,
         ordersThisWeek,
         pendingOrders,
         totalTenants,
         activeTenants,
+        activeOrdersTotal,
+        activeOrdersThisMonth,
+        activeOrdersLastMonth,
         payments,
         recentOrders,
         trafficLogs,
+        chartOrders,
     ] = await Promise.all([
         prisma.order.count(),
         prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
+        prisma.order.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
         prisma.order.count({ where: { createdAt: { gte: startOfWeek } } }),
         prisma.order.count({ where: { status: 'pending' } }),
         prisma.tenant.count(),
         prisma.tenant.count({ where: { isActive: true } }),
+        prisma.order.count({ where: { status: 'active' } }),
+        prisma.order.count({ where: { status: 'active', createdAt: { gte: startOfMonth } } }),
+        prisma.order.count({ where: { status: 'active', createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
         prisma.payment.findMany({ where: { status: 'paid' } }),
         prisma.order.findMany({
             take: 5,
@@ -36,6 +46,22 @@ export async function GET() {
         prisma.trafficLog.findMany({
             where: { date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30) } },
             orderBy: { date: 'asc' },
+        }),
+        // Fetch raw orders for charts (last 12 months)
+        prisma.order.findMany({
+            where: {
+                createdAt: {
+                    gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+                }
+            },
+            select: {
+                id: true,
+                status: true,
+                createdAt: true,
+                package: {
+                    select: { price: true }
+                }
+            }
         }),
     ]);
 
@@ -59,19 +85,43 @@ export async function GET() {
         }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
         stats: {
             totalOrders,
             ordersThisMonth,
+            ordersLastMonth,
             ordersThisWeek,
             pendingOrders,
             totalTenants,
             activeTenants,
+            activeOrdersTotal,
+            activeOrdersThisMonth,
+            activeOrdersLastMonth,
             inactiveTenants: totalTenants - activeTenants,
             totalRevenue,
         },
         recentOrders,
         trafficByDate,
         revenueByMonth,
+        chartOrders,
     });
+
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    return response;
+}
+
+export async function OPTIONS() {
+    const response = new NextResponse(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
+    return response;
 }

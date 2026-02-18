@@ -998,9 +998,9 @@ button {
 
 .pricing-popular-badge {
   position: absolute;
-  top: -12px;
+  top: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   padding: 6px 20px;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: white;
@@ -1011,10 +1011,10 @@ button {
   letter-spacing: 0.5px;
 }
 
-.pricing-card:hover {
+/* .pricing-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
-}
+} */
 
 .pricing-tier {
   font-size: 0.9rem;

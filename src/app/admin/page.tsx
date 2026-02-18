@@ -34,13 +34,6 @@ function formatRp(n: number) {
     return new Intl.NumberFormat('id-ID').format(n);
 }
 
-function getGreeting() {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Selamat Pagi';
-    if (hour < 18) return 'Selamat Siang';
-    return 'Selamat Malam';
-}
-
 function Skeleton({ width, height, style }: { width?: string; height?: string; style?: React.CSSProperties }) {
     return (
         <div
@@ -56,8 +49,17 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>({});
     const [error, setError] = useState<string | null>(null);
+    const [greeting, setGreeting] = useState('');
+    const [currentDate, setCurrentDate] = useState('');
 
     useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Selamat Pagi');
+        else if (hour < 18) setGreeting('Selamat Siang');
+        else setGreeting('Selamat Malam');
+
+        setCurrentDate(new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+
         // Fetch data immediately but don't block UI
         fetch('/api/dashboard')
             .then((res) => {
@@ -118,19 +120,16 @@ export default function AdminDashboard() {
         height: '100%',
     };
 
-    // Replace strict loading screen with just an overlay or partial loading
-    // We now Render the dashboard structure immediately
-
     return (
         <div className="dashboard-container">
             {/* WELCOME BANNER */}
             <div className="welcome-banner animate-fadeInUp">
                 <div>
-                    <h1>{getGreeting()}, {session?.user?.name || 'Admin'}! 👋</h1>
+                    <h1>{greeting}, {session?.user?.name || 'Admin'}! 👋</h1>
                     <p>Berikut adalah ringkasan performa bisnis bimbel Anda hari ini.</p>
                 </div>
                 <div className="banner-date">
-                    {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {currentDate}
                 </div>
             </div>
 
@@ -140,21 +139,7 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* QUICK ACTIONS */}
-            <div className="quick-actions animate-fadeInUp stagger-1">
-                <Link href="/admin/orders?new=true" className="btn btn-secondary btn-sm action-btn">
-                    ➕ Buat Order
-                </Link>
-                <Link href="/admin/tenants" className="btn btn-secondary btn-sm action-btn">
-                    🌐 Cek Website
-                </Link>
-                <button className="btn btn-secondary btn-sm action-btn">
-                    📥 Export Laporan
-                </button>
-                <button className="btn btn-secondary btn-sm action-btn">
-                    ⚙️ Pengaturan
-                </button>
-            </div>
+
 
             {/* STATS GRID */}
             <div className="stats-grid animate-fadeInUp stagger-2">
@@ -355,25 +340,7 @@ export default function AdminDashboard() {
                 .welcome-banner p { color: rgba(255,255,255,0.7); margin: 0; }
                 .banner-date { font-size: 0.9rem; opacity: 0.8; font-weight: 500; }
 
-                .quick-actions {
-                    display: flex;
-                    gap: 12px;
-                    overflow-x: auto;
-                    padding-bottom: 4px;
-                }
-                
-                .action-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    white-space: nowrap;
-                    border: 1px solid var(--border);
-                    background: var(--bg-card);
-                }
-                .action-btn:hover {
-                    border-color: var(--accent);
-                    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
-                }
+
 
                 .stats-grid {
                     display: grid;
@@ -387,9 +354,22 @@ export default function AdminDashboard() {
                     border-radius: var(--radius-lg);
                     border: 1px solid var(--border);
                     display: flex;
-                    align-items: flex-start;
-                    gap: 16px;
+                    align-items: center;
+                    gap: 20px;
                     transition: var(--transition);
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .stat-card::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 100px;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03));
+                    pointer-events: none;
                 }
                 
                 .stat-card:hover {
@@ -399,19 +379,36 @@ export default function AdminDashboard() {
                 }
 
                 .stat-icon {
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 12px;
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 16px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 1.5rem;
+                    font-size: 1.75rem;
                     flex-shrink: 0;
                 }
 
-                .stat-label { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 4px; }
-                .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-                .stat-desc { font-size: 0.8rem; color: var(--text-muted); }
+                .stat-label { 
+                    color: var(--text-secondary); 
+                    font-size: 0.95rem; 
+                    margin-bottom: 6px; 
+                    font-weight: 500;
+                }
+                .stat-value { 
+                    font-size: 1.75rem; 
+                    font-weight: 800; 
+                    color: var(--text-primary); 
+                    line-height: 1.2;
+                    margin-bottom: 4px;
+                }
+                .stat-desc { 
+                    font-size: 0.85rem; 
+                    color: var(--text-muted); 
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
 
                 .charts-grid {
                     display: grid;

@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
 import CommandPalette from '@/components/CommandPalette';
 
+
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: '📊' },
     { href: '/admin/orders', label: 'Pesanan', icon: '📦' },
@@ -14,6 +15,7 @@ const navItems = [
     { href: '/admin/analytics', label: 'Analitik', icon: '📈' },
     { href: '/admin/domains', label: 'Domain & Harga', icon: '🔗' },
     { href: '/admin/gateway', label: 'Payment Gateway', icon: '⚙️' },
+    { href: '/admin/settings', label: 'Pengaturan', icon: '🛠️' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -21,19 +23,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { data: session } = useSession();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const notificationRef = useRef<HTMLDivElement>(null);
 
-    // Close notification dropdown when clicking outside
+    // Restore & persist collapsed state
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-                setShowNotifications(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        const saved = localStorage.getItem('sidebar-collapsed');
+        if (saved === 'true') setCollapsed(true);
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('sidebar-collapsed', String(collapsed));
+    }, [collapsed]);
+
+
+
 
     // Generate breadcrumbs
     const pathSegments = pathname.split('/').filter(Boolean);
@@ -43,11 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return { href, label };
     });
 
-    const notifications = [
-        { id: 1, text: 'Order baru #ORD-2602-005 perlu diproses', time: 'Baru saja', unread: true },
-        { id: 2, text: 'Pembayaran diterima dari Bimbel Garuda', time: '10 menit lalu', unread: true },
-        { id: 3, text: 'Server maintenance dijadwalkan nanti malam', time: '2 jam lalu', unread: false },
-    ];
+
 
     return (
         <div className={`admin-layout ${collapsed ? 'collapsed' : ''}`}>
@@ -68,31 +66,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Sidebar */}
             <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
-                <div className="admin-sidebar-header">
-                    <div className="admin-sidebar-logo">
-                        <span className="logo-icon">🚀</span>
-                        {!collapsed && <span>Bimbel<span style={{ color: 'var(--accent)' }}>Pro</span></span>}
+                {collapsed ? (
+                    <div className="admin-sidebar-header">
+                        <div className="collapsed-logo" title="Bimbel Pro">
+                            🚀
+                        </div>
                     </div>
-                    <button
-                        className="sidebar-collapse-btn"
-                        onClick={() => setCollapsed(!collapsed)}
-                        title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-                    >
-                        {collapsed ? '→' : '←'}
-                    </button>
-                </div>
-
-                <div className="admin-user-profile">
-                    <div className="user-avatar">
-                        {session?.user?.name?.charAt(0) || 'A'}
-                    </div>
-                    {!collapsed && (
+                ) : (
+                    <div className="admin-user-profile">
+                        <div className="user-avatar">
+                            {session?.user?.name?.charAt(0) || 'A'}
+                        </div>
                         <div className="user-info">
                             <div className="user-name">{session?.user?.name || 'Admin'}</div>
                             <div className="user-role">Super Admin</div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <ul className="admin-nav">
                     {navItems.map(item => (
@@ -110,72 +100,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ))}
                 </ul>
 
-                <div className="admin-sidebar-footer">
-                    <Link href="/" className="sidebar-footer-link" title={collapsed ? "Lihat Website" : ""}>
-                        <span className="nav-icon">🏠</span>
-                        {!collapsed && <span>Lihat Website</span>}
-                    </Link>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
-                        className="sidebar-footer-link logout"
-                        title={collapsed ? "Logout" : ""}
-                    >
-                        <span className="nav-icon">🚪</span>
-                        {!collapsed && <span>Logout</span>}
-                    </button>
-                </div>
             </aside>
 
             {/* Main Content */}
             <main className="admin-content">
                 {/* Header */}
                 <header className="admin-content-header">
-                    <div>
-                        <div className="breadcrumbs">
-                            {breadcrumbs.map((crumb, index) => (
-                                <span key={crumb.href} className="breadcrumb-item">
-                                    {index > 0 && <span className="breadcrumb-separator"> / </span>}
-                                    <Link href={crumb.href}>{crumb.label}</Link>
-                                </span>
-                            ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <button
+                            className="hamburger-btn"
+                            onClick={() => setCollapsed(!collapsed)}
+                            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                        >
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+                        <div>
+                            <div className="breadcrumbs">
+                                {breadcrumbs.map((crumb, index) => (
+                                    <span key={crumb.href} className="breadcrumb-item">
+                                        {index > 0 && <span className="breadcrumb-separator"> / </span>}
+                                        <Link href={crumb.href}>{crumb.label}</Link>
+                                    </span>
+                                ))}
+                            </div>
+                            <h2 className="admin-page-title">
+                                {navItems.find(i => i.href === pathname)?.label || 'Dashboard'}
+                            </h2>
                         </div>
-                        <h2 className="admin-page-title">
-                            {navItems.find(i => i.href === pathname)?.label || 'Dashboard'}
-                        </h2>
                     </div>
-                    <div className="admin-header-actions" ref={notificationRef}>
-                        <div style={{ position: 'relative' }}>
-                            <button
-                                className="btn btn-secondary btn-sm icon-only"
-                                onClick={() => setShowNotifications(!showNotifications)}
-                                style={{ position: 'relative' }}
-                            >
-                                🔔
-                                <span className="notification-badge-dot"></span>
-                            </button>
+                    <div className="admin-header-actions">
 
-                            {showNotifications && (
-                                <div className="notification-dropdown">
-                                    <div className="notification-header">
-                                        Notifikasi <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>2 Baru</span>
-                                    </div>
-                                    <div className="notification-list">
-                                        {notifications.map(n => (
-                                            <div key={n.id} className={`notification-item ${n.unread ? 'unread' : ''}`}>
-                                                <div className="notification-content">
-                                                    <p>{n.text}</p>
-                                                    <div className="notification-time">{n.time}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="notification-footer" style={{ padding: '8px', textAlign: 'center', borderTop: '1px solid var(--border)', fontSize: '0.8rem' }}>
-                                        <Link href="#" className="text-accent">Lihat Semua</Link>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <button className="btn btn-secondary btn-sm icon-only" title="Settings (Ctrl+K)">⚙️</button>
+                        <Link href="/" className="btn btn-secondary btn-sm icon-only" title="Lihat Website" target="_blank">🌐</Link>
+                        <button className="btn btn-secondary btn-sm icon-only" title="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>⏻</button>
                     </div>
                 </header>
 
@@ -215,6 +173,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 .admin-sidebar.collapsed {
                     width: 80px;
+                    overflow: hidden;
                 }
 
                 .admin-sidebar-header {
@@ -333,7 +292,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 .admin-sidebar.collapsed .admin-nav a {
                     justify-content: center;
+                    padding: 14px 0;
+                    border-left: none;
+                    gap: 0;
+                    text-align: center;
+                }
+
+                .admin-sidebar.collapsed .admin-nav {
+                    overflow: visible;
                     padding: 16px 0;
+                }
+
+                .admin-sidebar.collapsed .admin-nav li {
+                    display: flex;
+                    justify-content: center;
                 }
 
                 .admin-nav a:hover {
@@ -371,6 +343,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     font-size: 1.2rem;
                     min-width: 24px;
                     text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .admin-sidebar-footer {
@@ -395,6 +370,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 .admin-sidebar.collapsed .sidebar-footer-link {
                     justify-content: center;
+                    padding: 14px 0;
+                    gap: 0;
                 }
 
                 .sidebar-footer-link:hover {
@@ -437,6 +414,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     font-size: 1.2rem;
                     font-weight: 700;
                     margin: 0;
+                }
+
+                .hamburger-btn {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 5px;
+                    width: 36px;
+                    height: 36px;
+                    padding: 8px;
+                    background: none;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                }
+
+                .hamburger-btn span {
+                    display: block;
+                    width: 100%;
+                    height: 2px;
+                    background: var(--text-secondary);
+                    border-radius: 2px;
+                    transition: all 0.3s;
+                }
+
+                .hamburger-btn:hover {
+                    background: var(--bg-card);
+                    border-color: var(--accent);
+                }
+
+                .hamburger-btn:hover span {
+                    background: var(--accent);
+                }
+
+                .collapsed-logo {
+                    font-size: 1.8rem;
+                    text-align: center;
+                    padding: 16px 0;
+                    cursor: default;
+                }
+
+                .admin-sidebar.collapsed .admin-sidebar-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 70px;
+                    border-bottom: 1px solid var(--border);
                 }
                 
                 .admin-header-actions {

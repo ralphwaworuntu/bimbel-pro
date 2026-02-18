@@ -249,9 +249,21 @@ function GeneralSettings() {
                                     <div className="flex items-center justify-center gap-2 mb-3 text-green-400 font-medium">
                                         <span>✅ Logo Terpasang</span>
                                     </div>
-                                    <label htmlFor="logo-upload" className="btn btn-secondary btn-sm cursor-pointer hover:bg-white/10 transition-colors">
-                                        {uploading ? 'Mengupload...' : 'Ganti Logo'}
-                                    </label>
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                        <a
+                                            href={form.appLogo}
+                                            download="logo"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-primary btn-sm"
+                                            style={{ textDecoration: 'none' }}
+                                        >
+                                            ⬇️ Download Logo
+                                        </a>
+                                        <label htmlFor="logo-upload" className="btn btn-secondary btn-sm cursor-pointer hover:bg-white/10 transition-colors">
+                                            {uploading ? 'Mengupload...' : '🔄 Ganti Logo'}
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -725,7 +737,6 @@ export default function SettingsPage() {
     const menuItems = [
         { id: 'general', label: '🏢 Umum & Invoice', desc: 'Identitas brand & kontak' },
         { id: 'email', label: '📧 Email Notifikasi', desc: 'SMTP & template email' },
-        { id: 'payment', label: '💳 Payment Gateway', desc: 'Midtrans & Xendit' },
     ];
 
     return (
@@ -754,7 +765,7 @@ export default function SettingsPage() {
                 <main className="settings-content">
                     {activeTab === 'general' && <GeneralSettings />}
                     {activeTab === 'email' && <EmailSettings />}
-                    {activeTab === 'payment' && <PaymentSettings />}
+
                 </main>
             </div>
 

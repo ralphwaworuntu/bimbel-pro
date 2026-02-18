@@ -38,8 +38,14 @@ export default async function RootLayout({
 }: {
     children: React.ReactNode
 }) {
-    // Fetch global app configuration from database
-    const appConfig = await prisma.appConfig.findFirst();
+    // Fetch global app configuration from database (with fallback)
+    let appConfig = null;
+    try {
+        appConfig = await prisma.appConfig.findFirst();
+    } catch {
+        // Prisma client may not have AppConfig model yet - use defaults
+        console.warn('AppConfig fetch failed, using defaults');
+    }
 
     return (
         <html lang="id">

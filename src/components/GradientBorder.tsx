@@ -27,7 +27,7 @@ const GradientBorder: React.FC<GradientBorderProps> = ({
                 borderRadius: `calc(${radius} - ${width})`,
                 height: '100%',
                 width: '100%',
-                overflow: 'hidden'
+                // overflow: 'hidden'
             }}>
                 {children}
             </div>

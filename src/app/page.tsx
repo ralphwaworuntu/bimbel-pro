@@ -25,6 +25,7 @@ interface Package {
     monthlyFee: number;
     description: string;
     features: string[];
+    badge?: string;
 }
 
 function formatRp(n: number) {
@@ -384,19 +385,23 @@ export default function Home() {
 }
 
 function PricingCard({ pkg, index, isAnnual }: { pkg: Package, index: number, isAnnual: boolean }) {
-    const monthlyFee = isAnnual ? pkg.monthlyFee * 12 * 0.8 : pkg.monthlyFee;
+    const mainPrice = isAnnual ? pkg.price : pkg.monthlyFee;
+    const subText = isAnnual
+        ? `Sama dengan Rp ${formatRp(Math.round(pkg.price / 12))} / bulan`
+        : null;
 
     const CardContent = (
-        <div className={`pricing-card ${pkg.tier === 'pro' ? 'popular' : ''} hover-lift`} style={{ height: '100%' }}>
-            {pkg.tier === 'pro' && <span className="pricing-popular-badge">Paling Populer</span>}
+        <div className={`pricing-card ${pkg.badge ? 'popular' : ''}`} style={{ height: '100%' }}>
+            {pkg.badge && <span className="pricing-popular-badge">{pkg.badge}</span>}
             <div className="pricing-tier">{pkg.tier}</div>
             <div className="pricing-name">{pkg.name}</div>
             <div className="pricing-desc">{pkg.description || 'Paket terbaik untuk memulai'}</div>
             <div className="pricing-price">
-                <span className="currency">Rp</span> {formatRp(pkg.price)}
+                <span className="currency">Rp</span> {formatRp(mainPrice)}
+                {!isAnnual && <span style={{ fontSize: '0.4em', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '4px' }}>/ bulan</span>}
             </div>
-            <div className="pricing-monthly">
-                + Rp {formatRp(monthlyFee)}/{isAnnual ? 'tahun' : 'bulan'}
+            <div className="pricing-monthly" style={{ visibility: subText ? 'visible' : 'hidden', minHeight: '1.2em' }}>
+                {subText}
             </div>
             <ul className="pricing-features">
                 {pkg.features.map((f, j) => <li key={j}>{f}</li>)}
@@ -409,7 +414,7 @@ function PricingCard({ pkg, index, isAnnual }: { pkg: Package, index: number, is
 
     return (
         <ScrollReveal className={`pricing-card-wrapper`} delay={index * 0.1}>
-            {pkg.tier === 'pro' ? (
+            {pkg.badge ? (
                 <GradientBorder width="2px" radius="16px">
                     {CardContent}
                 </GradientBorder>

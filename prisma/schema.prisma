@@ -25,6 +25,7 @@ model Package {
   monthlyFee  Int      @default(0)
   description String
   features    String   // JSON array string
+  badge       String?  // e.g. "Popular", "Best Seller"
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
