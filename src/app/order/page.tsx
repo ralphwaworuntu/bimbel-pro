@@ -3,11 +3,17 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Confetti from '@/components/Confetti';
 import { useToast } from '@/components/ToastProvider';
 import FormField from '@/components/FormField';
+
+const Map = dynamic(() => import('@/components/Map'), {
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-slate-400">Loading Map...</div>
+});
 
 interface Package {
     id: string;
@@ -73,20 +79,42 @@ function OrderWizardContent() {
         email: '',
         phone: '',
         address: '',
+        village: '',        // Kelurahan
+        district: '',       // Kecamatan
+        city: '',           // Kota/Kabupaten
+        province: '',       // Provinsi
+        postalCode: '',     // Kode Pos
         domainRequested: '',
         subdomainRequested: '',
         paymentType: 'full',
     });
 
-    // Domain check state
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+    // ... (existing code) ...
+
+    // Use effect to load initial data
+
     const [domainName, setDomainName] = useState('');
     const [selectedExt, setSelectedExt] = useState('.com');
     const [domainCheckResult, setDomainCheckResult] = useState<{ available: boolean; message: string } | null>(null);
     const [checkingDomain, setCheckingDomain] = useState(false);
     const [domainMode, setDomainMode] = useState<'subdomain' | 'custom'>('subdomain');
 
+    // Regional Data State
+    const [provinces, setProvinces] = useState<any[]>([]);
+    const [cities, setCities] = useState<any[]>([]);
+    const [districts, setDistricts] = useState<any[]>([]);
+    const [villages, setVillages] = useState<any[]>([]);
+
     useEffect(() => {
         setIsClient(true);
+        // Fetch Provinces
+        fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
+            .then(response => response.json())
+            .then(data => setProvinces(data))
+            .catch(error => console.error('Error fetching provinces:', error));
+
         const savedStep = localStorage.getItem('order_step');
         if (savedStep) setStep(parseInt(savedStep));
 
@@ -123,6 +151,45 @@ function OrderWizardContent() {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [step]);
+
+    // Fetch Cities when Province changes
+    useEffect(() => {
+        if (form.province) {
+            const selectedProv = provinces.find(p => p.name === form.province);
+            if (selectedProv) {
+                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${selectedProv.id}.json`)
+                    .then(response => response.json())
+                    .then(data => setCities(data))
+                    .catch(error => console.error('Error fetching cities:', error));
+            }
+        }
+    }, [form.province, provinces]);
+
+    // Fetch Districts when City changes
+    useEffect(() => {
+        if (form.city) {
+            const selectedCity = cities.find(c => c.name === form.city);
+            if (selectedCity) {
+                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${selectedCity.id}.json`)
+                    .then(response => response.json())
+                    .then(data => setDistricts(data))
+                    .catch(error => console.error('Error fetching districts:', error));
+            }
+        }
+    }, [form.city, cities]);
+
+    // Fetch Villages when District changes
+    useEffect(() => {
+        if (form.district) {
+            const selectedDistrict = districts.find(d => d.name === form.district);
+            if (selectedDistrict) {
+                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${selectedDistrict.id}.json`)
+                    .then(response => response.json())
+                    .then(data => setVillages(data))
+                    .catch(error => console.error('Error fetching villages:', error));
+            }
+        }
+    }, [form.district, districts]);
 
     useEffect(() => {
         if (preselected && !form.packageId) {
@@ -167,6 +234,11 @@ function OrderWizardContent() {
         if (!form.brandName) errors.brandName = 'Nama brand wajib diisi';
         if (!form.email) errors.email = 'Email wajib diisi';
         if (!form.phone) errors.phone = 'No. WA wajib diisi';
+
+        if (!form.address) errors.address = 'Alamat wajib diisi';
+        if (!form.city) errors.city = 'Kota wajib diisi';
+        if (!form.province) errors.province = 'Provinsi wajib diisi';
+
         if (domainMode === 'subdomain' && !form.subdomainRequested) errors.domain = 'Pilih subdomain';
         if (domainMode === 'custom' && !form.domainRequested) errors.domain = 'Pilih domain';
         return errors;
@@ -177,7 +249,7 @@ function OrderWizardContent() {
     const canNext = () => {
         switch (step) {
             case 1: return !!form.packageId;
-            case 2: return !errors.clientName && !errors.brandName && !errors.email && !errors.phone;
+            case 2: return !errors.clientName && !errors.brandName && !errors.email && !errors.phone && !errors.address && !errors.city && !errors.province;
             case 3: return !errors.domain;
             case 4: return !!form.paymentType;
             default: return true;
@@ -194,7 +266,10 @@ function OrderWizardContent() {
                     clientName: true,
                     brandName: true,
                     email: true,
-                    phone: true
+                    phone: true,
+                    address: true,
+                    city: true,
+                    province: true
                 });
                 showToast('Mohon lengkapi data yang wajib diisi', 'warning');
             }
@@ -373,8 +448,81 @@ function OrderWizardContent() {
                                         touched={touched.phone} required />
                                 </div>
                                 <div className="form-col-full slide-up" style={{ animationDelay: '0.2s' }}>
-                                    <FormField label="Alamat" as="textarea" placeholder="Alamat bisnis bimbel Anda" value={form.address}
-                                        onChange={e => setForm({ ...form, address: e.target.value })} />
+                                    <FormField label="Alamat Lengkap" as="textarea" placeholder="Nomer jalan, RT/RW, Patokan" value={form.address}
+                                        onChange={e => setForm({ ...form, address: e.target.value })}
+                                        onBlur={() => handleBlur('address')}
+                                        error={touched.address && !form.address ? 'Wajib diisi' : undefined}
+                                        touched={touched.address} required />
+                                </div>
+
+                                {/* New Address Details Fields */}
+                                <div className="form-col-half slide-up" style={{ animationDelay: '0.22s' }}>
+                                    <FormField label="Provinsi" as="select" value={form.province}
+                                        onChange={e => {
+                                            setForm({ ...form, province: e.target.value, city: '', district: '', village: '' });
+                                        }}
+                                        onBlur={() => handleBlur('province')}
+                                        error={touched.province && !form.province ? 'Wajib diisi' : undefined}
+                                        touched={touched.province} required
+                                    >
+                                        <option value="">Pilih Provinsi</option>
+                                        {provinces.map(p => (
+                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </FormField>
+                                </div>
+                                <div className="form-col-half slide-up" style={{ animationDelay: '0.22s' }}>
+                                    <FormField label="Kota/Kabupaten" as="select" value={form.city}
+                                        onChange={e => {
+                                            setForm({ ...form, city: e.target.value, district: '', village: '' });
+                                        }}
+                                        disabled={!cities.length}
+                                        onBlur={() => handleBlur('city')}
+                                        error={touched.city && !form.city ? 'Wajib diisi' : undefined}
+                                        touched={touched.city} required
+                                    >
+                                        <option value="">Pilih Kota/Kabupaten</option>
+                                        {cities.map(c => (
+                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                        ))}
+                                    </FormField>
+                                </div>
+                                <div className="form-col-half slide-up" style={{ animationDelay: '0.24s' }}>
+                                    <FormField label="Kecamatan" as="select" value={form.district}
+                                        onChange={e => {
+                                            setForm({ ...form, district: e.target.value, village: '' });
+                                        }}
+                                        disabled={!districts.length}
+                                    >
+                                        <option value="">Pilih Kecamatan</option>
+                                        {districts.map(d => (
+                                            <option key={d.id} value={d.name}>{d.name}</option>
+                                        ))}
+                                    </FormField>
+                                </div>
+                                <div className="form-col-half slide-up" style={{ animationDelay: '0.24s' }}>
+                                    <FormField label="Kelurahan" as="select" value={form.village}
+                                        onChange={e => setForm({ ...form, village: e.target.value })}
+                                        disabled={!villages.length}
+                                    >
+                                        <option value="">Pilih Kelurahan</option>
+                                        {villages.map(v => (
+                                            <option key={v.id} value={v.name}>{v.name}</option>
+                                        ))}
+                                    </FormField>
+                                </div>
+                                <div className="form-col-full slide-up" style={{ animationDelay: '0.26s' }}>
+                                    <FormField label="Kode Pos" placeholder="Contoh: 85228" value={form.postalCode}
+                                        onChange={e => setForm({ ...form, postalCode: e.target.value })} />
+                                </div>
+
+                                <div className="form-col-full slide-up" style={{ animationDelay: '0.3s' }}>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Lokasi Peta (Opsional)</label>
+                                    <Map onLocationSelect={(lat, lng) => {
+                                        setLocation({ lat, lng });
+                                        // Map sync removed as requested
+                                    }} />
+                                    <p className="text-xs text-slate-500 mt-2">Geser pin untuk menandai lokasi tepat (tidak mempengaruhi alamat di atas).</p>
                                 </div>
                             </div>
                         </div>

@@ -70,12 +70,13 @@ export async function provisionTenant(orderId: string) {
         }
 
         // 6. Send Email
-        const appConfig = await prisma.appConfig.findFirst() || {
-            appName: 'Bimbel Pro',
-            appLogo: '',
-            companyName: 'PT Bimbel Pro',
-            address: '',
-            contact: ''
+        const dbConfig = await prisma.appConfig.findFirst();
+        const appConfig = {
+            appName: dbConfig?.appName || 'Bimbel Pro',
+            appLogo: dbConfig?.appLogo || '',
+            companyName: dbConfig?.companyName || 'PT Bimbel Pro',
+            address: dbConfig?.address || '',
+            contact: dbConfig ? `${dbConfig.contactEmail || ''} ${dbConfig.contactPhone ? '| ' + dbConfig.contactPhone : ''}` : ''
         };
 
         const adminUrl = `https://${tenant.subdomain}.bimbelpro.com/admin`; // Mock URL scheme

@@ -81,7 +81,7 @@ export default function Home() {
                                 Fitur tryout online, bank soal, dan manajemen siswa — semua sudah siap pakai!
                             </p>
                             <div className="hero-actions">
-                                <Link href="/order" className="btn btn-primary btn-lg">
+                                <Link href="/order" className="btn btn-primary btn-lg text-white">
                                     🚀 Pesan Sekarang
                                 </Link>
                                 <a href="#portfolio" className="btn btn-secondary btn-lg">

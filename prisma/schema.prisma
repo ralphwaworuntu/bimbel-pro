@@ -41,6 +41,11 @@ model Order {
   email              String
   phone              String
   address            String    @default("")
+  village            String    @default("") // Kelurahan
+  district           String    @default("") // Kecamatan
+  city               String    @default("") // Kota/Kabupaten
+  province           String    @default("") // Provinsi
+  postalCode         String    @default("") // Kode Pos
   domainRequested    String    @default("")
   subdomainRequested String    @default("")
   packageId          String
@@ -117,4 +122,29 @@ model DomainPrice {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AppConfig {
+  id           String   @id @default(uuid())
+  appName      String   @default("Bimbel Pro")
+  appLogo      String   @default("")
+  companyName  String   @default("")
+  address      String   @default("")
+  contactEmail String   @default("")
+  contactPhone String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model EmailConfig {
+  id        String   @id @default(uuid())
+  host      String
+  port      Int
+  secure    Boolean
+  user      String
+  password  String
+  fromName  String
+  fromEmail String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

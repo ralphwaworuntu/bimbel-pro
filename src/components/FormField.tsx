@@ -1,12 +1,13 @@
 import React, { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
-interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement | HTMLSelectElement> {
     label: string;
     error?: string;
     touched?: boolean;
-    as?: 'input' | 'textarea';
+    as?: 'input' | 'textarea' | 'select';
     rows?: number;
     className?: string;
+    children?: React.ReactNode;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -40,6 +41,27 @@ const FormField: React.FC<FormFieldProps> = ({
                     }}
                     {...(props as any)}
                 />
+            ) : as === 'select' ? (
+                <div style={{ position: 'relative' }}>
+                    <select
+                        className={`form-input ${hasError ? 'error' : ''}`}
+                        style={{
+                            width: '100%', padding: '12px 16px', borderRadius: '8px',
+                            border: `1px solid ${hasError ? 'var(--danger)' : 'var(--border)'}`,
+                            background: 'var(--bg-secondary)', color: 'var(--text-primary)',
+                            transition: 'all 0.2s', appearance: 'none', cursor: 'pointer'
+                        }}
+                        {...(props as any)}
+                    >
+                        {props.children}
+                    </select>
+                    <div style={{
+                        position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                        pointerEvents: 'none', color: 'var(--text-secondary)'
+                    }}>
+                        ▼
+                    </div>
+                </div>
             ) : (
                 <input
                     className={`form-input ${hasError ? 'error' : ''}`}
