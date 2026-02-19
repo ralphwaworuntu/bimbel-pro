@@ -186,68 +186,183 @@ export default function PackagesPage() {
         }
     };
 
-    return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Package Management</h1>
-                <Button
-                    onClick={() => handleOpenModal()}
-                    size="sm"
-                >
-                    Add Package
-                </Button>
-            </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="max-w-full overflow-x-auto">
-                    <div className="min-w-[1000px]">
-                        <Table>
-                            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-                                <TableRow>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Name</TableCell>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Price</TableCell>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Monthly</TableCell>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Badge</TableCell>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
-                                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                                {packages.map((pkg) => (
-                                    <TableRow key={pkg.id}>
-                                        <TableCell className="px-5 py-4 font-medium text-gray-900 dark:text-white">{pkg.name}</TableCell>
-                                        <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">Rp {pkg.price.toLocaleString()}</TableCell>
-                                        <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">Rp {pkg.monthlyFee.toLocaleString()}</TableCell>
-                                        <TableCell className="px-5 py-4">
-                                            {pkg.badge && <Badge color="success" size="sm" className="bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500">{pkg.badge}</Badge>}
-                                        </TableCell>
-                                        <TableCell className="px-5 py-4">
-                                            <Badge
-                                                size="sm"
-                                                color={pkg.isActive ? "success" : "error"}
-                                            // className={pkg.isActive ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500" : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"}
-                                            >
-                                                {pkg.isActive ? "Active" : "Inactive"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="px-5 py-4 flex gap-3">
-                                            <button onClick={() => handleOpenModal(pkg)} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
-                                                <PencilIcon className="w-5 h-5" />
-                                            </button>
-                                            <button onClick={() => handleDelete(pkg.id)} className="text-red-500 hover:text-red-700">
-                                                <TrashBinIcon className="w-5 h-5" />
-                                            </button>
-                                        </TableCell>
+    // Promo State
+    interface Promo {
+        id: string;
+        code: string;
+        description: string;
+        discountType: 'fixed' | 'percentage';
+        discountValue: number;
+        validUntil: string;
+        isActive: boolean;
+        usageCount: number;
+    }
+
+    const mockPromos: Promo[] = [
+        { id: '1', code: 'HELLO2025', description: 'Promo tahun baru', discountType: 'percentage', discountValue: 20, validUntil: '2025-12-31', isActive: true, usageCount: 45 },
+        { id: '2', code: 'MERDEKA17', description: 'Diskon kemerdekaan', discountType: 'fixed', discountValue: 170000, validUntil: '2025-08-17', isActive: false, usageCount: 120 },
+        { id: '3', code: 'STUDENT50', description: 'Khusus pelajar', discountType: 'percentage', discountValue: 50, validUntil: '2025-06-30', isActive: true, usageCount: 12 }
+    ];
+
+    const [promos, setPromos] = useState<Promo[]>(mockPromos);
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+    const [currentPromo, setCurrentPromo] = useState<Promo | null>(null);
+    const [promoFormData, setPromoFormData] = useState<Omit<Promo, 'id' | 'usageCount'>>({
+        code: '',
+        description: '',
+        discountType: 'percentage',
+        discountValue: 0,
+        validUntil: '',
+        isActive: true
+    });
+
+    const handleOpenPromoModal = (promo?: Promo) => {
+        if (promo) {
+            setCurrentPromo(promo);
+            setPromoFormData({
+                code: promo.code,
+                description: promo.description,
+                discountType: promo.discountType,
+                discountValue: promo.discountValue,
+                validUntil: promo.validUntil,
+                isActive: promo.isActive
+            });
+        } else {
+            setCurrentPromo(null);
+            setPromoFormData({
+                code: '',
+                description: '',
+                discountType: 'percentage',
+                discountValue: 0,
+                validUntil: '',
+                isActive: true
+            });
+        }
+        setIsPromoModalOpen(true);
+    };
+
+    const handlePromoSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (currentPromo) {
+            setPromos(promos.map(p => p.id === currentPromo.id ? { ...p, ...promoFormData } : p));
+        } else {
+            setPromos([...promos, { ...promoFormData, id: Math.random().toString(36).substr(2, 9), usageCount: 0 }]);
+        }
+        setIsPromoModalOpen(false);
+    };
+
+    const handleDeletePromo = (id: string) => {
+        if (confirm("Are you sure you want to delete this promo?")) {
+            setPromos(promos.filter(p => p.id !== id));
+        }
+    };
+
+    return (
+        <div className="p-6 space-y-8">
+            {/* Packages Section */}
+            <div>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Package Management</h1>
+                    <Button onClick={() => handleOpenModal()} size="sm">Add Package</Button>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+                    <div className="max-w-full overflow-x-auto">
+                        <div className="min-w-[1000px]">
+                            <Table>
+                                <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                                    <TableRow>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Name</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Price</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Monthly</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Badge</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                                    {packages.map((pkg) => (
+                                        <TableRow key={pkg.id}>
+                                            <TableCell className="px-5 py-4 font-medium text-gray-900 dark:text-white">{pkg.name}</TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">Rp {pkg.price.toLocaleString()}</TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">Rp {pkg.monthlyFee.toLocaleString()}</TableCell>
+                                            <TableCell className="px-5 py-4">
+                                                {pkg.badge && <Badge color="success" size="sm" className="bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500">{pkg.badge}</Badge>}
+                                            </TableCell>
+                                            <TableCell className="px-5 py-4">
+                                                <Badge size="sm" color={pkg.isActive ? "success" : "error"}>{pkg.isActive ? "Active" : "Inactive"}</Badge>
+                                            </TableCell>
+                                            <TableCell className="px-5 py-4 flex gap-3">
+                                                <button onClick={() => handleOpenModal(pkg)} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                                                    <PencilIcon className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => handleDelete(pkg.id)} className="text-red-500 hover:text-red-700">
+                                                    <TrashBinIcon className="w-5 h-5" />
+                                                </button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal */}
-            {/* Modal */}
+            {/* Promo Section */}
+            <div>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Promo Management</h2>
+                    <Button onClick={() => handleOpenPromoModal()} size="sm" variant="warning">Add Promo</Button>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+                    <div className="max-w-full overflow-x-auto">
+                        <div className="min-w-[1000px]">
+                            <Table>
+                                <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                                    <TableRow>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Code</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Description</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Discount</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Valid Until</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Usage</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Status</TableCell>
+                                        <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                                    {promos.map((promo) => (
+                                        <TableRow key={promo.id}>
+                                            <TableCell className="px-5 py-4 font-bold text-gray-900 dark:text-white font-mono">{promo.code}</TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">{promo.description}</TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">
+                                                {promo.discountType === 'percentage' ? `${promo.discountValue}%` : `Rp ${promo.discountValue.toLocaleString()}`}
+                                            </TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">{promo.validUntil}</TableCell>
+                                            <TableCell className="px-5 py-4 text-gray-500 dark:text-gray-400">{promo.usageCount} used</TableCell>
+                                            <TableCell className="px-5 py-4">
+                                                <Badge size="sm" color={promo.isActive ? "success" : "warning"}>{promo.isActive ? "Active" : "Inactive"}</Badge>
+                                            </TableCell>
+                                            <TableCell className="px-5 py-4 flex gap-3">
+                                                <button onClick={() => handleOpenPromoModal(promo)} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                                                    <PencilIcon className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => handleDeletePromo(promo.id)} className="text-red-500 hover:text-red-700">
+                                                    <TrashBinIcon className="w-5 h-5" />
+                                                </button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Package Modal */}
             {isModalOpen && mounted && createPortal(
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 max-h-[90vh] overflow-y-auto">
@@ -255,6 +370,11 @@ export default function PackagesPage() {
                             {currentPackage ? "Edit Package" : "New Package"}
                         </h2>
                         <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* ... existing form content ... (omitted for brevity in replacement, but logically should be kept - wait, replacement replaces block!) */}
+                            {/* I MUST include the full existing form content if I replace the block containing it. */}
+                            {/* Wait, the TargetContent below is the RETURN block. I need to be careful. */}
+                            {/* The user's prompt implies I should just ADD the section. */}
+                            {/* I will rewrite the return statement to include both sections. */}
                             {/* Section: Basic Info */}
                             <div>
                                 <h3 className="mb-3 font-semibold text-gray-800 dark:text-white/90">Package Details</h3>
@@ -330,6 +450,79 @@ export default function PackagesPage() {
                             <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
                                 <Button variant="outline" onClick={handleCloseModal} type="button">Cancel</Button>
                                 <Button type="submit">Save Package</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Promo Modal */}
+            {isPromoModalOpen && mounted && createPortal(
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 max-h-[90vh] overflow-y-auto">
+                        <h2 className="mb-4 text-xl font-bold dark:text-white">
+                            {currentPromo ? "Edit Promo" : "New Promo"}
+                        </h2>
+                        <form onSubmit={handlePromoSubmit} className="space-y-5">
+                            <div>
+                                <Label>Promo Code</Label>
+                                <Input
+                                    value={promoFormData.code}
+                                    onChange={(e) => setPromoFormData({ ...promoFormData, code: e.target.value.toUpperCase() })}
+                                    required
+                                    placeholder="e.g. SALE50"
+                                />
+                            </div>
+                            <div>
+                                <Label>Description</Label>
+                                <Input
+                                    value={promoFormData.description}
+                                    onChange={(e) => setPromoFormData({ ...promoFormData, description: e.target.value })}
+                                    placeholder="Promo description"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label>Discount Type</Label>
+                                    <select
+                                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg dark:bg-white/[0.05] dark:border-white/[0.1] dark:text-white outline-none focus:border-brand-500"
+                                        value={promoFormData.discountType}
+                                        onChange={(e) => setPromoFormData({ ...promoFormData, discountType: e.target.value as 'fixed' | 'percentage' })}
+                                    >
+                                        <option value="percentage">Percentage (%)</option>
+                                        <option value="fixed">Fixed Amount (Rp)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label>Value</Label>
+                                    <Input
+                                        type="number"
+                                        value={promoFormData.discountValue}
+                                        onChange={(e) => setPromoFormData({ ...promoFormData, discountValue: Number(e.target.value) })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <Label>Valid Until</Label>
+                                <Input
+                                    type="date"
+                                    value={promoFormData.validUntil}
+                                    onChange={(e) => setPromoFormData({ ...promoFormData, validUntil: e.target.value })}
+                                />
+                            </div>
+                            <div className="pt-2">
+                                <Checkbox
+                                    label="Active Status"
+                                    checked={promoFormData.isActive}
+                                    onChange={(checked) => setPromoFormData({ ...promoFormData, isActive: checked })}
+                                />
+                            </div>
+
+                            <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
+                                <Button variant="outline" onClick={() => setIsPromoModalOpen(false)} type="button">Cancel</Button>
+                                <Button type="submit">Save Promo</Button>
                             </div>
                         </form>
                     </div>

@@ -297,7 +297,17 @@ export default function Home() {
                             <div className="toggle-slider"></div>
                         </div>
                         <span className={`toggle-label ${isAnnual ? 'active' : 'text-muted'}`} onClick={() => setIsAnnual(true)}>
-                            Tahunan <span className="badge-save">Hemat 20%</span>
+                            Tahunan
+                            {packages.length > 0 && (() => {
+                                const percentages = packages.map(pkg => {
+                                    if (pkg.monthlyFee <= 0) return 0;
+                                    const monthlyTotal = pkg.monthlyFee * 12;
+                                    if (pkg.price >= monthlyTotal) return 0;
+                                    return Math.round(((monthlyTotal - pkg.price) / monthlyTotal) * 100);
+                                });
+                                const maxSavings = Math.max(0, ...percentages);
+                                return maxSavings > 0 ? <span className="badge-save">Hemat {maxSavings}%</span> : null;
+                            })()}
                         </span>
                     </div>
 
@@ -393,16 +403,24 @@ function PricingCard({ pkg, index, isAnnual }: { pkg: Package, index: number, is
     const CardContent = (
         <div className={`pricing-card ${pkg.badge ? 'popular' : ''}`} style={{ height: '100%' }}>
             {pkg.badge && <span className="pricing-popular-badge">{pkg.badge}</span>}
-            <div className="pricing-tier">{pkg.tier}</div>
-            <div className="pricing-name">{pkg.name}</div>
+            {/* <div className="pricing-tier">{pkg.tier}</div> */}
+            <div className="pricing-name" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {pkg.name}
+                {isAnnual && pkg.monthlyFee > 0 && pkg.price < (pkg.monthlyFee * 12) && (
+                    <span className="badge-save" style={{ position: 'relative', top: '-2px', marginLeft: '4px' }}>
+                        Hemat {Math.round(((pkg.monthlyFee * 12 - pkg.price) / (pkg.monthlyFee * 12)) * 100)}%
+                    </span>
+                )}
+            </div>
             <div className="pricing-desc">{pkg.description || 'Paket terbaik untuk memulai'}</div>
             <div className="pricing-price">
                 <span className="currency">Rp</span> {formatRp(mainPrice)}
                 {!isAnnual && <span style={{ fontSize: '0.4em', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '4px' }}>/ bulan</span>}
             </div>
-            <div className="pricing-monthly" style={{ visibility: subText ? 'visible' : 'hidden', minHeight: '1.2em' }}>
+            <div className="pricing-monthly" style={{ display: isAnnual ? 'block' : 'none' }}>
                 {subText}
             </div>
+            <div style={{ width: '100%', height: '1px', background: 'var(--border)', margin: '0 0 24px 0' }}></div>
             <ul className="pricing-features">
                 {pkg.features.map((f, j) => <li key={j}>{f}</li>)}
             </ul>
