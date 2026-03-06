@@ -112,66 +112,37 @@ function OrderWizardContent() {
     const [postalOptions, setPostalOptions] = useState<string[]>([]);
 
     useEffect(() => {
-        if (form.village && form.district && form.city) {
+        if (form.district && form.city) {
             setLoadingPostal(true);
             setPostalOptions([]); // Clear previous options
 
-            // Normalize names for better matching
-            // Remove 'KABUPATEN' or 'KOTA' prefix from city name for matching
-            const cleanCity = form.city.replace(/^(KABUPATEN|KOTA)\s+/i, '').trim();
-
-            fetch(`https://kodepos.vercel.app/search?q=${form.village}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status && data.data && Array.isArray(data.data)) {
-                        // Filter results to match current District and City
-                        // API returns: { urban, sub_district, city, province, postal_code }
-                        const filtered = data.data.filter((item: any) => {
-                            const apiDist = (item.sub_district || '').toLowerCase();
-                            const formDist = form.district.toLowerCase();
-                            const apiCity = (item.city || '').toLowerCase();
-
-                            // Check if District matches and City *contains* the clean city name
-                            return apiDist === formDist && apiCity.includes(cleanCity.toLowerCase());
-                        });
-
-                        // If strict filter yields results, use them
-                        let final = filtered;
-
-                        // Fallback 1: Relax City check, match only District (Kecamatan)
-                        // Because Kecamatan names are usually distinct enough within a region
-                        if (final.length === 0) {
-                            final = data.data.filter((item: any) =>
-                                (item.sub_district || '').toLowerCase() === form.district.toLowerCase()
-                            );
-                        }
-
-                        // Extract unique postal codes
-                        const codes = Array.from(new Set(final.map((item: any) => item.postal_code))) as string[];
-
-                        if (codes.length > 0) {
-                            setPostalOptions(codes);
-                            // Auto-select if only one option and current value is empty
-                            if (codes.length === 1 && !form.postalCode) {
-                                setForm(prev => ({ ...prev, postalCode: codes[0] }));
+            const selectedDistrict = districts.find(d => d.name === form.district);
+            if (selectedDistrict) {
+                fetch(`/api/locations?type=postal_codes&districtId=${selectedDistrict.id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (Array.isArray(data) && data.length > 0) {
+                            setPostalOptions(data);
+                            if (data.length === 1 && !form.postalCode) {
+                                setForm(prev => ({ ...prev, postalCode: data[0] }));
                             }
                         } else {
-                            // No matching codes found, fallback to manual input (empty options)
                             setPostalOptions([]);
                         }
-                    } else {
+                    })
+                    .catch(err => {
+                        console.error("Error fetching postal codes:", err);
                         setPostalOptions([]);
-                    }
-                })
-                .catch(err => {
-                    console.error("Error fetching postal codes:", err);
-                    setPostalOptions([]);
-                })
-                .finally(() => setLoadingPostal(false));
+                    })
+                    .finally(() => setLoadingPostal(false));
+            } else {
+                setPostalOptions([]);
+                setLoadingPostal(false);
+            }
         } else {
             setPostalOptions([]);
         }
-    }, [form.village, form.district, form.city]);
+    }, [form.district, form.city, districts]);
 
     useEffect(() => {
         // Reset postal code when location changes
@@ -188,9 +159,8 @@ function OrderWizardContent() {
 
     useEffect(() => {
         setIsClient(true);
-        // Fetch Provinces
-
-        fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
+        // Fetch Provinces Local
+        fetch('/api/locations?type=provinces')
             .then(response => response.json())
             .then(data => setProvinces(data))
             .catch(error => console.error('Error fetching provinces:', error));
@@ -237,7 +207,7 @@ function OrderWizardContent() {
         if (form.province) {
             const selectedProv = provinces.find(p => p.name === form.province);
             if (selectedProv) {
-                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${selectedProv.id}.json`)
+                fetch(`/api/locations?type=cities&provinceId=${selectedProv.id}`)
                     .then(response => response.json())
                     .then(data => setCities(data))
                     .catch(error => console.error('Error fetching cities:', error));
@@ -250,7 +220,7 @@ function OrderWizardContent() {
         if (form.city) {
             const selectedCity = cities.find(c => c.name === form.city);
             if (selectedCity) {
-                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${selectedCity.id}.json`)
+                fetch(`/api/locations?type=districts&cityId=${selectedCity.id}`)
                     .then(response => response.json())
                     .then(data => setDistricts(data))
                     .catch(error => console.error('Error fetching districts:', error));
@@ -263,7 +233,7 @@ function OrderWizardContent() {
         if (form.district) {
             const selectedDistrict = districts.find(d => d.name === form.district);
             if (selectedDistrict) {
-                fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${selectedDistrict.id}.json`)
+                fetch(`/api/locations?type=villages&districtId=${selectedDistrict.id}`)
                     .then(response => response.json())
                     .then(data => setVillages(data))
                     .catch(error => console.error('Error fetching villages:', error));
@@ -271,31 +241,7 @@ function OrderWizardContent() {
         }
     }, [form.district, districts]);
 
-    // Fetch Postal Codes when Village changes
-    useEffect(() => {
-        if (form.village) {
-            setLoadingPostal(true);
 
-            fetch(`https://kodepos.vercel.app/search?q=${encodeURIComponent(form.village)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 'OK' && data.data && data.data.length > 0) {
-                        const firstCode = data.data[0].code.toString();
-                        setForm(prev => ({ ...prev, postalCode: firstCode }));
-                    } else {
-                        // If current postalCode is not found, clear it
-                        setForm(prev => ({ ...prev, postalCode: '' }));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching postal codes:', error);
-                    setForm(prev => ({ ...prev, postalCode: '' }));
-                })
-                .finally(() => setLoadingPostal(false));
-        } else {
-            setForm(prev => ({ ...prev, postalCode: '' }));
-        }
-    }, [form.village]);
 
     useEffect(() => {
         if (preselected && !form.packageId) {
