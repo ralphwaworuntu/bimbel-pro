@@ -271,31 +271,6 @@ function OrderWizardContent() {
         }
     }, [form.district, districts]);
 
-    // Fetch Postal Codes when Village changes
-    useEffect(() => {
-        if (form.village) {
-            setLoadingPostal(true);
-
-            fetch(`https://kodepos.vercel.app/search?q=${encodeURIComponent(form.village)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 'OK' && data.data && data.data.length > 0) {
-                        const firstCode = data.data[0].code.toString();
-                        setForm(prev => ({ ...prev, postalCode: firstCode }));
-                    } else {
-                        // If current postalCode is not found, clear it
-                        setForm(prev => ({ ...prev, postalCode: '' }));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching postal codes:', error);
-                    setForm(prev => ({ ...prev, postalCode: '' }));
-                })
-                .finally(() => setLoadingPostal(false));
-        } else {
-            setForm(prev => ({ ...prev, postalCode: '' }));
-        }
-    }, [form.village]);
 
     useEffect(() => {
         if (preselected && !form.packageId) {
