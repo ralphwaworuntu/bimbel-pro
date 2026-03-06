@@ -107,9 +107,89 @@ function OrderWizardContent() {
     const [districts, setDistricts] = useState<any[]>([]);
     const [villages, setVillages] = useState<any[]>([]);
 
+    // Postal Code Logic
+    const [postalOptions, setPostalOptions] = useState<string[]>([]);
+    const [loadingPostal, setLoadingPostal] = useState(false);
+
+    useEffect(() => {
+        if (form.village && form.district && form.city) {
+            setLoadingPostal(true);
+            setPostalOptions([]); // Clear previous options
+
+            // Normalize names for better matching
+            // Remove 'KABUPATEN' or 'KOTA' prefix from city name for matching
+            const cleanCity = form.city.replace(/^(KABUPATEN|KOTA)\s+/i, '').trim();
+
+            fetch(`https://kodepos.vercel.app/search?q=${form.village}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status && data.data && Array.isArray(data.data)) {
+                        // Filter results to match current District and City
+                        // API returns: { urban, sub_district, city, province, postal_code }
+                        const filtered = data.data.filter((item: any) => {
+                            const apiDist = (item.sub_district || '').toLowerCase();
+                            const formDist = form.district.toLowerCase();
+                            const apiCity = (item.city || '').toLowerCase();
+
+                            // Check if District matches and City *contains* the clean city name
+                            return apiDist === formDist && apiCity.includes(cleanCity.toLowerCase());
+                        });
+
+                        // If strict filter yields results, use them
+                        let final = filtered;
+
+                        // Fallback 1: Relax City check, match only District (Kecamatan)
+                        // Because Kecamatan names are usually distinct enough within a region
+                        if (final.length === 0) {
+                            final = data.data.filter((item: any) =>
+                                (item.sub_district || '').toLowerCase() === form.district.toLowerCase()
+                            );
+                        }
+
+                        // Extract unique postal codes
+                        const codes = Array.from(new Set(final.map((item: any) => item.postal_code))) as string[];
+
+                        if (codes.length > 0) {
+                            setPostalOptions(codes);
+                            // Auto-select if only one option and current value is empty
+                            if (codes.length === 1 && !form.postalCode) {
+                                setForm(prev => ({ ...prev, postalCode: codes[0] }));
+                            }
+                        } else {
+                            // No matching codes found, fallback to manual input (empty options)
+                            setPostalOptions([]);
+                        }
+                    } else {
+                        setPostalOptions([]);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching postal codes:", err);
+                    setPostalOptions([]);
+                })
+                .finally(() => setLoadingPostal(false));
+        } else {
+            setPostalOptions([]);
+        }
+    }, [form.village, form.district, form.city]);
+
+    useEffect(() => {
+        // Reset postal code when location changes
+        if (!postalOptions.includes(form.postalCode) && postalOptions.length > 0) {
+            // Maybe don't reset if user typed it manually before?
+            // But if options changed, old value might be invalid.
+            // Let's keep it if valid, else clear?
+            // Actually better UX: if options loaded, and current value is not in it, maybe clear it?
+            // But wait, what if user typed it?
+            // Let's just let user pick.
+        }
+    }, [postalOptions]);
+
+
     useEffect(() => {
         setIsClient(true);
         // Fetch Provinces
+
         fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
             .then(response => response.json())
             .then(data => setProvinces(data))
@@ -512,8 +592,23 @@ function OrderWizardContent() {
                                     </FormField>
                                 </div>
                                 <div className="form-col-full slide-up" style={{ animationDelay: '0.26s' }}>
-                                    <FormField label="Kode Pos" placeholder="Contoh: 85228" value={form.postalCode}
-                                        onChange={e => setForm({ ...form, postalCode: e.target.value })} />
+                                    {loadingPostal ? (
+                                        <div className="animate-pulse h-[42px] bg-gray-100 rounded-lg dark:bg-slate-800"></div>
+                                    ) : postalOptions.length > 0 ? (
+                                        <FormField label="Kode Pos" as="select" value={form.postalCode}
+                                            onChange={e => setForm({ ...form, postalCode: e.target.value })}
+                                            disabled={loadingPostal}
+                                        >
+                                            <option value="">Pilih Kode Pos</option>
+                                            {postalOptions.map(code => (
+                                                <option key={code} value={code}>{code}</option>
+                                            ))}
+                                        </FormField>
+                                    ) : (
+                                        <FormField label="Kode Pos" placeholder="Contoh: 85228" value={form.postalCode}
+                                            onChange={e => setForm({ ...form, postalCode: e.target.value })}
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="form-col-full slide-up" style={{ animationDelay: '0.3s' }}>

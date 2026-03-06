@@ -148,3 +148,41 @@ model EmailConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Regional Data Models
+model Province {
+  id   String @id
+  name String
+  cities City[]
+}
+
+model City {
+  id         String @id
+  provinceId String
+  name       String
+  province   Province @relation(fields: [provinceId], references: [id])
+  districts  District[]
+}
+
+model District {
+  id     String @id
+  cityId String
+  name   String
+  city   City @relation(fields: [cityId], references: [id])
+  villages Village[]
+  postalCodes DistrictPostalCode[]
+}
+
+model Village {
+  id         String @id
+  districtId String
+  name       String
+  district   District @relation(fields: [districtId], references: [id])
+}
+
+model DistrictPostalCode {
+  id         String @id @default(uuid())
+  districtId String
+  code       String
+  district   District @relation(fields: [districtId], references: [id])
+}
