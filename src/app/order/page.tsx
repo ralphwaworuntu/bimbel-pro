@@ -241,7 +241,10 @@ function OrderWizardContent() {
         }
     }, [form.district, districts]);
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 05daca4128c2fed89cb071dc1c8f340b13d15e6e
 
     useEffect(() => {
         if (preselected && !form.packageId) {
