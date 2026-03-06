@@ -106,6 +106,7 @@ function OrderWizardContent() {
     const [cities, setCities] = useState<any[]>([]);
     const [districts, setDistricts] = useState<any[]>([]);
     const [villages, setVillages] = useState<any[]>([]);
+    const [loadingPostal, setLoadingPostal] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -190,6 +191,32 @@ function OrderWizardContent() {
             }
         }
     }, [form.district, districts]);
+
+    // Fetch Postal Codes when Village changes
+    useEffect(() => {
+        if (form.village) {
+            setLoadingPostal(true);
+
+            fetch(`https://kodepos.vercel.app/search?q=${encodeURIComponent(form.village)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 'OK' && data.data && data.data.length > 0) {
+                        const firstCode = data.data[0].code.toString();
+                        setForm(prev => ({ ...prev, postalCode: firstCode }));
+                    } else {
+                        // If current postalCode is not found, clear it
+                        setForm(prev => ({ ...prev, postalCode: '' }));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching postal codes:', error);
+                    setForm(prev => ({ ...prev, postalCode: '' }));
+                })
+                .finally(() => setLoadingPostal(false));
+        } else {
+            setForm(prev => ({ ...prev, postalCode: '' }));
+        }
+    }, [form.village]);
 
     useEffect(() => {
         if (preselected && !form.packageId) {
@@ -459,7 +486,7 @@ function OrderWizardContent() {
                                 <div className="form-col-half slide-up" style={{ animationDelay: '0.22s' }}>
                                     <FormField label="Provinsi" as="select" value={form.province}
                                         onChange={e => {
-                                            setForm({ ...form, province: e.target.value, city: '', district: '', village: '' });
+                                            setForm({ ...form, province: e.target.value, city: '', district: '', village: '', postalCode: '' });
                                         }}
                                         onBlur={() => handleBlur('province')}
                                         error={touched.province && !form.province ? 'Wajib diisi' : undefined}
@@ -474,7 +501,7 @@ function OrderWizardContent() {
                                 <div className="form-col-half slide-up" style={{ animationDelay: '0.22s' }}>
                                     <FormField label="Kota/Kabupaten" as="select" value={form.city}
                                         onChange={e => {
-                                            setForm({ ...form, city: e.target.value, district: '', village: '' });
+                                            setForm({ ...form, city: e.target.value, district: '', village: '', postalCode: '' });
                                         }}
                                         disabled={!cities.length}
                                         onBlur={() => handleBlur('city')}
@@ -490,7 +517,7 @@ function OrderWizardContent() {
                                 <div className="form-col-half slide-up" style={{ animationDelay: '0.24s' }}>
                                     <FormField label="Kecamatan" as="select" value={form.district}
                                         onChange={e => {
-                                            setForm({ ...form, district: e.target.value, village: '' });
+                                            setForm({ ...form, district: e.target.value, village: '', postalCode: '' });
                                         }}
                                         disabled={!districts.length}
                                     >
@@ -502,7 +529,7 @@ function OrderWizardContent() {
                                 </div>
                                 <div className="form-col-half slide-up" style={{ animationDelay: '0.24s' }}>
                                     <FormField label="Kelurahan" as="select" value={form.village}
-                                        onChange={e => setForm({ ...form, village: e.target.value })}
+                                        onChange={e => setForm({ ...form, village: e.target.value, postalCode: '' })}
                                         disabled={!villages.length}
                                     >
                                         <option value="">Pilih Kelurahan</option>
@@ -512,8 +539,8 @@ function OrderWizardContent() {
                                     </FormField>
                                 </div>
                                 <div className="form-col-full slide-up" style={{ animationDelay: '0.26s' }}>
-                                    <FormField label="Kode Pos" placeholder="Contoh: 85228" value={form.postalCode}
-                                        onChange={e => setForm({ ...form, postalCode: e.target.value })} />
+                                    <FormField label="Kode Pos" placeholder={loadingPostal ? "Mencari kode pos..." : "Contoh: 85228"} value={form.postalCode}
+                                        onChange={e => setForm({ ...form, postalCode: e.target.value })} disabled={loadingPostal} />
                                 </div>
 
                                 <div className="form-col-full slide-up" style={{ animationDelay: '0.3s' }}>
